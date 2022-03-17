@@ -4,7 +4,7 @@ Implementation of stand-alone CVODE integrators for CPU and GPU implementations
 
 ## Dependencies 
 
-(Cantera)[https://github.com/Cantera/cantera.git]
+Cantera          https://github.com/Cantera/cantera.git
 
-Sundials Library 
+Sundials Library https://github.com/LLNL/sundials.git
 
