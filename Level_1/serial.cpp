@@ -26,9 +26,9 @@ void run()
     Cantera::vector_fp x(nsp, 0.0);
 
     // Define initial Values of unknows 
-    x[gas[0]->speciesIndex("CH4")] = 1.0;
-    x[gas[0]->speciesIndex("O2")] = 2;
-    x[gas[0]->speciesIndex("N2")] = 7.52;
+    x[gas[0]->speciesIndex("CH4")] = 0.19011;
+    x[gas[0]->speciesIndex("O2")] = 0.095057;
+    x[gas[0]->speciesIndex("N2")] = 0.71483;
 
     // Set initial Values of unknows in vector 
     for (int i=0; i<n_size; i++) {
