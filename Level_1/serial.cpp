@@ -25,7 +25,7 @@ void run()
     // Create Vector of unknowns
     Cantera::vector_fp x(nsp, 0.0);
 
-    // Define initial Values of unknows 
+    // Define initial Values of unknows (Corresponds to phi = 1.0, perfect fuel air mixture) 
     x[gas[0]->speciesIndex("CH4")] = 0.19011;
     x[gas[0]->speciesIndex("O2")] = 0.095057;
     x[gas[0]->speciesIndex("N2")] = 0.71483;
