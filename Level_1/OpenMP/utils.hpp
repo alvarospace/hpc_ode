@@ -1,0 +1,331 @@
+/*
+    Small library with utilities for TFM-BSC project
+*/
+
+#ifndef UTILS
+
+#define UTILS
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <iostream>
+#include <iomanip>
+#include <chrono>
+#include <omp.h>
+
+#endif
+
+namespace Utils
+{   
+
+    /*
+        Print number of active threads
+    */
+    int printNumThreads(){
+        int numThreads;
+        #pragma omp parallel
+        {
+            int id = omp_get_thread_num();
+            if (id == 0){
+                numThreads = omp_get_num_threads();
+                std::cout << "Number of threads: " << numThreads << std::endl;
+            }
+        }
+        return numThreads;
+    }
+
+    /*
+        User defined class to measure time
+    */
+    class Timer {
+        public:
+            void tic() {
+                t1 = std::chrono::steady_clock::now();
+            }
+
+            void toc() {
+                t2 = std::chrono::steady_clock::now();
+                measured_time = t2 - t1;
+            }
+
+            double time() {
+                return measured_time.count();
+            }
+
+
+        private:
+            std::chrono::steady_clock::time_point t1;
+            std::chrono::steady_clock::time_point t2;
+            std::chrono::duration<double> measured_time;
+    };
+
+
+
+
+    /*
+        Struct to save the spacial coordinates of a point in a mesh
+    */
+    struct Coords {
+        double x,y,z;
+    };
+
+    /*
+        Struct that contains the thermodynamic data of each point of the input file
+    */
+    struct ThermData {
+        size_t points{0}, nsp{0};
+        std::vector<double> temp;
+        std::vector<double> enthal;
+        std::vector<std::vector<double>> matSp;
+        std::vector<Coords> pos;
+        std::string header{""};
+
+        /*
+            Still need to develop this part, its not very usefull print
+            all the species without name
+        */
+        void info(){
+            std::cout << "Number of species found in the csv file: " << nsp << std::endl;
+            std::cout << "Number of points: " << points << std::endl;
+
+            // std::stringstream titles(header);
+            // std::string title;
+            // while (std::getline(titles, title, ',')){
+            //     // Remove quotation marks
+            //     title.erase(title.begin());
+            //     title.erase(title.end()-1);
+            //     std::cout << std::left << std::setw(10) << title;
+            // }
+            // std::cout << std::endl;
+
+        }
+    };
+
+
+    /*
+        Count the number of species are in the input file
+    */
+    size_t numSpeciesCsv(const std::string& header){
+        size_t nsp {0};
+
+        // Format of the species match
+        std::string match {"CO"};
+
+        std::string item;
+        std::stringstream itemIterator(header);
+        
+        // Iterate the header's words and count species
+        std::getline(itemIterator, item, ',');
+        while(item.find(match) != std::string::npos){
+            nsp++;
+            std::getline(itemIterator, item, ',');
+        }
+
+        return nsp;
+    }
+
+
+
+    /*
+        Read csv file with the thermodynamic data for a 
+        time-step of the simulation
+        
+        Input: 
+            - string: name of the file
+        Output:
+            - pointer to a struct: contains the species and therm data of each point
+    */
+    std::shared_ptr<ThermData> readCsv(const std::string& csvFileName){
+        // Min valid mass fraction
+        //double eps {1e-16};
+
+        std::string header;
+
+        // Read file object and open
+        std::ifstream file;
+        file.open(csvFileName);
+
+        // Health check
+        if (!file.is_open()){
+            std::cout << "Error opening input file" << std::endl;
+            exit(1);
+        }
+
+
+        // Get the first row because (the header)
+        std::getline(file, header);
+        
+        // Count number of species
+        size_t nsp = numSpeciesCsv(header);
+        //std::cout << "Number of species found in the csv file: " << nsp << std::endl;
+
+        // Struct with the data of the file
+        auto mesh = std::make_shared<ThermData>();
+        mesh->nsp = nsp;
+        mesh->header = header;
+
+
+        /* Read dataset */
+        std::string row {""};
+        size_t n{0};
+        while(std::getline(file, row)){
+            n++;
+            std::stringstream items(row);
+
+            // Save species values in one row of the matrix
+            std::vector<double> species(mesh->nsp, 0.0f);
+            std::string item;
+            for (double& i : species){
+                std::getline(items,item,',');
+                
+                // Filter extremely low values of mass fraction
+                // double tmp = std::stod(item);
+                // if (tmp > eps)
+                //     i = tmp;
+                i = std::stod(item);
+            }
+            mesh->matSp.push_back(species);
+
+            // Read Enthalpy and Temperature 
+            std::getline(items, item, ',');
+            mesh->enthal.push_back(std::stod(item));
+            std::getline(items, item, ',');
+            mesh->temp.push_back(std::stod(item));
+
+            // Read coordinates (3D)
+            Coords coords;
+
+            std::getline(items, item, ',');
+            coords.x = std::stod(item);
+            std::getline(items, item, ',');
+            coords.y = std::stod(item);
+            std::getline(items, item, ',');
+            coords.z = std::stod(item);
+
+            mesh->pos.push_back(coords);
+
+        }
+
+        mesh->points = n;
+
+        // Close file
+        file.close();
+        return mesh;
+    }
+
+
+    /*
+        Write csv file with the thermodynamic data after
+        a time-step of the simulation
+        
+        Input: 
+            - const shared_ptr to the struct data
+            - String: name of the outputfile
+    */
+    void writeCsv(const std::shared_ptr<ThermData>& mesh, const std::string& csvFileName) {
+        
+        std::ofstream file(csvFileName);
+
+        if (!file.is_open()){
+            std::cout << "Error opening/creating output file" << std::endl;
+            exit(1);
+        }
+        
+        // Write header
+        file << mesh->header << std::endl;
+        
+        // Write data
+        size_t n = mesh->points;
+        size_t nsp = mesh->nsp;
+        for (size_t i = 0; i < n; i++){
+
+            // Precision and notation
+            file.precision(4);
+            file << std::scientific;
+
+            // Write species
+            for (size_t j = 0; j < nsp; j++){
+                file << mesh->matSp[i][j] << ',';
+            }
+
+            // Write enthalpy
+            file.precision(3);
+            file << mesh->enthal[i] << ',';
+
+            // Write temperature
+            file << std::defaultfloat << mesh->temp[i] << ',';
+
+            // Write coordinates
+            file.precision(8);
+            file << mesh->pos[i].x << ',' 
+                 << mesh->pos[i].y << ',' 
+                 << mesh->pos[i].z << std::endl;
+        }
+
+        file.close();
+    }
+
+    /*
+        Write Csv file with the time report of the execution, the objetive is the analysis
+        the number of OpenMP threads and package size with best performance
+        
+        Input:
+            - filename
+            - number of threads
+            - size of the package processed by thread
+            - vector of double containing the time report
+            - number of points in the input file
+            - boolean to append report or create new file
+    */
+    void reportCsv(const std::string& csvFileName, const int numThreads, const size_t sizePackage,
+                 const std::vector<double> time, const size_t meshPoints, bool append){
+        
+        std::ofstream file;
+
+        if (!append){
+            // Header of the data
+            std::string header {"threads,package,points,read_time[s],calc_time[s],write_time[s]"};
+
+            // Overwrite/create mode
+            file.open(csvFileName, std::ofstream::out);
+            
+            if (!file.is_open()){
+                std::cout << "Error opening/creating report file" << std::endl;
+                exit(1);
+            }
+            
+            // Report
+            file << header << std::endl;
+            file << numThreads << ',' << sizePackage << ',' << meshPoints;
+            
+            size_t n = time.size();
+            for (int i = 0; i < n; i++){
+                file << ',' << time[i];
+            }
+
+            file << std::endl;
+
+        } else {
+            // Append mode
+            file.open(csvFileName, std::ofstream::app);
+
+            if (!file.is_open()){
+                std::cout << "Error opening/creating report file" << std::endl;
+                exit(1);
+            }
+
+            // Report
+            file << numThreads << ',' << sizePackage << ',' << meshPoints;
+            
+            size_t n = time.size();
+            for (int i = 0; i < n; i++){
+                file << ',' << time[i];
+            }
+
+            file << std::endl;
+
+        }
+
+        file.close();
+    }
+}
