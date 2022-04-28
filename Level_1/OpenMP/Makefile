@@ -8,13 +8,16 @@ CPPFLAGS=$(CANTERA_INCLUDES)
 LDFLAGS=
 LDLIBS=$(CANTERA_LIBS)
 
-SRCS=main.cpp utils.hpp
-OBJS=$(subst .cpp,.hpp,.o,$(SRCS))
+SRCS=main.cpp
+OBJS=$(subst .cpp,.o,$(SRCS))
 
 all: main
 
+main: main.cpp utils.hpp
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) main.cpp $(LDLIBS) -o main
+
 clean:
-	$(RM) $(OBJS) main
+	$(RM) main
 
 dist-clean: clean
 	$(RM) *~ 

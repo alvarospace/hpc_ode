@@ -62,6 +62,16 @@ void run(const std::string& mechanism, const std::string& phase,
             thread_points = mod;
         else
             thread_points = pack_size;
+
+        /********* VECTORS ***********/
+        // Allocation of the required memory for Cantera application
+
+        // Vector of pointers for solutions, ThermoPhases and reactors
+        std::vector<std::shared_ptr<Cantera::Solution>> solutions(thread_points, Cantera::newSolution(mechanism,phase,"None"));
+        std::vector<std::shared_ptr<Cantera::ThermoPhase>> gases(thread_points);
+        std::vector<Cantera::IdealGasConstPressureReactor> reactors(thread_points);
+        std::vector<Cantera::ReactorNet> nets(thread_points);
+        /****************************/
         
 
         /* Inner loop to integrate the chemical */
@@ -69,31 +79,22 @@ void run(const std::string& mechanism, const std::string& phase,
             // Index of the global point
             size_t index = i * pack_size + j;
 
-            // Definition of a new "Solution" object that provides acces to ThermoPhase,
-            // Kinetics and Transport objects
-            std::shared_ptr<Cantera::Solution> sol = Cantera::newSolution(mechanism,phase,"None");
-
-            // ThermoPhase of solution
-            std::shared_ptr<Cantera::ThermoPhase> gas = sol->thermo();
-
             // Define initial Values of unknows (Corresponds to phi = 1.0, perfect fuel air mixture)
-            gas->setState_TPY(mesh->temp[index], p, mesh->matSp[index].data());
+            gases[j] = solutions[j]->thermo();
+            gases[j]->setState_TPY(mesh->temp[index], p, mesh->matSp[index].data());
 
-            // Objects to produce the reaction
-            Cantera::IdealGasConstPressureReactor r;
-            Cantera::ReactorNet net;
 
             // Insert the reaction
-            r.insert(sol);
-            net.addReactor(r);
+            reactors[j].insert(solutions[j]);
+            nets[j].addReactor(reactors[j]);
 
             // Integrate time step
-            net.advance(dt);    
+            nets[j].advance(dt);    
 
             // Save solution
-            mesh->temp[index] = r.temperature();
-            gas->getMassFractions(mesh->matSp[index].data());
-            mesh->enthal[index] = gas->enthalpy_mass();
+            mesh->temp[index] = reactors[j].temperature();
+            gases[j]->getMassFractions(mesh->matSp[index].data());
+            mesh->enthal[index] = gases[j]->enthalpy_mass();
         }
     }
     /************************************************************/
@@ -181,22 +182,4 @@ int main(int argc, char *argv[]){
     return 0;
 }
 
-
-// allocateTime.tic();
-// /********* VECTORS ***********/
-// // Allocation of the required memory for Cantera application
-
-// // Vector of pointers for solutions, ThermoPhases and reactors
-// std::vector<std::shared_ptr<Cantera::Solution>> solutions;
-// std::vector<std::shared_ptr<Cantera::ThermoPhase>> gases;
-
-// for (size_t i = 0; i < n_size; i++){
-//     solutions.push_back(Cantera::newSolution(mechanism,phase,"None"));
-//     gases.push_back(solutions[i]->thermo());
-// }
-
-// std::vector<Cantera::IdealGasConstPressureReactor> reactors(n_size);
-// std::vector<Cantera::ReactorNet> nets(n_size);
-// /****************************/
-// allocateTime.toc();
 
