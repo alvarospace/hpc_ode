@@ -14,4 +14,6 @@ read.cpp - Contains function to read .csv (I am sure this can be improved)
 
 'res_gri3.0.csv' corresponds to data from the 'gri30..xml' mechanims with Methane as fuel 
 
-'res_h2.csv' corresponds to data from the 'h2_li_2004.xml' mechanims with Hydrogen as fuel 
+'res_h2.csv' corresponds to data from the 'h2_li_2004.xml' mechanims with Hydrogen as fuel
+
+'generate.py' can be used to generate data for any chemical mechanism (Details on the script are written as comments) 
