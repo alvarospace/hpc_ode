@@ -8,13 +8,16 @@ set(CMAKE_CXX_STANDARD 11)
 
 find_package(Threads REQUIRED)
 
-#Sundials
-include_directories("/gpfs/projects/bsc21/bsc21575/02_Sources/sundials_6.1/build/include/")
-link_directories("/gpfs/projects/bsc21/bsc21575/02_Sources/sundials_6.1/build/lib64/")
-link_libraries(-L/gpfs/projects/bsc21/bsc21575/02_Sources/sundials_6.1/build/lib64/ -lsundials_cvodes -lsundials_nvecserial)
+#Sundials Include 
+include_directories("/path_to_sundials/sundials_6.1/build/include/")
 
-#Pyjac
-include_directories("/gpfs/projects/bsc21/bsc21575/03_Random_tests/08_Random_Scripts/21_PyJac/libs_pyjac/out_est2/")
-link_libraries(/gpfs/projects/bsc21/bsc21575/03_Random_tests/08_Random_Scripts/21_PyJac/libs_pyjac/out_est2/libc_pyjac.a)
+#Sundials library 
+link_libraries(-L/path_to_sundials/sundials_6.1/build/lib64/ -lsundials_cvodes -lsundials_nvecserial)
+link_directories("/path_to_sundials/sundials_6.1/build/lib64/")
+
+#Pyjac Includes 
+include_directories("./out/")
+#Pyjac library 
+link_libraries(./libc_pyjac.a)
 
 add_executable(run_pyjac main.cpp)
