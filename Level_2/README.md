@@ -16,4 +16,4 @@ writeLibrary.py - A python script to compile sources generated from pyjac, compl
 
 out  - directory that contains source and header files generated from pyjac for gri30 chemical mechanism
 
-
+(I tried compiling the out directory using cmake but it does not work, maybe you can take a look at this, there is a CMakeLists.txt file in out/)
