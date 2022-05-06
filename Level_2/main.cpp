@@ -87,7 +87,7 @@ int main()
       for (int j=0 ; j < NSP-1 ; j++){
           NV_Ith_S(y,j+1) = content[i][j];    
       }
-      cvode_mem = CVodeCreate(CV_ADAMS,sunctx);
+      cvode_mem = CVodeCreate(CV_BDF,sunctx);
       int flag = CVodeInit(cvode_mem, dydt_cvodes, 0, y);
       flag = CVodeSStolerances(cvode_mem, reltol, abstol);
       A = SUNDenseMatrix(NSP, NSP,sunctx);
