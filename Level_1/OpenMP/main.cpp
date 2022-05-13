@@ -124,14 +124,14 @@ void run(const std::string& mechanism, const std::string& phase,
 
     /* Write csv time report */
     std::vector<double> time = {readTime.time(), calculationTime.time(), writeTime.time()};
-    Utils::reportCsv("report_time.csv", nThreads, pack_size, time, n_size, append);
+    Utils::reportCsv("report_time.csv", mechanism, nThreads, pack_size, time, n_size, append);
 
 }
 
 
 int main(int argc, char *argv[]){
     std::string mechanism {"gri30.yaml"};
-    std::string phase {"gri30"};
+    std::string phase {""};
     std::string inputFile {"res2000.csv"};
     std::string outputFile {"out.csv"};
     size_t pack{10};
@@ -145,7 +145,7 @@ int main(int argc, char *argv[]){
         }
 
         if (args[1].compare("--help") == 0 || args[1].compare("-h") == 0) {
-            std::cout << "Usage: ./main [input file=res2000.csv] [output file=out.csv] [package size=10] [append report file=0]" << std::endl;
+            std::cout << "Usage: " << args[0] <<" [input file=res2000.csv] [output file=out.csv] [mechanism=gri30.yaml] [package size=10] [append report file=0]" << std::endl;
             return 0;
         } else {
             if (argc == 2) {
@@ -156,12 +156,18 @@ int main(int argc, char *argv[]){
             } else if (argc == 4) {
                 inputFile = args[1];
                 outputFile = args[2];
-                pack = std::stoi(args[3]);
+                mechanism = args[3];
             } else if (argc == 5) {
                 inputFile = args[1];
                 outputFile = args[2];
-                pack = std::stoi(args[3]);
-                if (std::stoi(args[4]) == 1){
+                mechanism = args[3];
+                pack = std::stoi(args[4]);
+            } else if (argc == 6) {
+                inputFile = args[1];
+                outputFile = args[2];
+                mechanism = args[3];
+                pack = std::stoi(args[4]);
+                if (std::stoi(args[5]) == 1){
                     append = true;
                 }
             } else {
