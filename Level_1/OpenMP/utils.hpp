@@ -79,47 +79,56 @@ namespace Utils
         std::vector<std::vector<double>> matSp;
         std::vector<Coords> pos;
         std::string header{""};
+        bool coordFlag;
 
-        /*
-            Still need to develop this part, its not very usefull print
-            all the species without name
-        */
         void info(){
+            std::cout << std::endl << "********* ThermData INFO **********" << std::endl << std::endl;
+
             std::cout << "Number of species found in the csv file: " << nsp << std::endl;
             std::cout << "Number of points: " << points << std::endl;
 
-            // std::stringstream titles(header);
-            // std::string title;
-            // while (std::getline(titles, title, ',')){
-            //     // Remove quotation marks
-            //     title.erase(title.begin());
-            //     title.erase(title.end()-1);
-            //     std::cout << std::left << std::setw(10) << title;
-            // }
-            // std::cout << std::endl;
+            if (!coordFlag){
+                std::cout << "Coords points NOT FOUND" << std::endl;
+            }
 
+            std::cout << std::endl << "***********************************" << std::endl << std::endl;
         }
     };
 
 
     /*
         Count the number of species are in the input file
+
+        Reference bool to indicate if coordinates data is provided:
+            coordFlag = false -> No coords
+            coordFlag = true -> coords need to be read
     */
-    size_t numSpeciesCsv(const std::string& header){
+    size_t numSpeciesCsv(const std::string& header, bool &coordFlag){
         size_t nsp {0};
 
         // Format of the species match
         std::string match {"CO"};
 
+        // Last Column if there is no coords in the input file
+        std::string noCoords {"TEM"};
+
         std::string item;
         std::stringstream itemIterator(header);
-        
+
+        // Vector of strings containing the names of the columns
+        std::vector<std::string> columns;
+
         // Iterate the header's words and count species
-        std::getline(itemIterator, item, ',');
-        while(item.find(match) != std::string::npos){
-            nsp++;
-            std::getline(itemIterator, item, ',');
+        while(std::getline(itemIterator, item, ',')){
+
+            if (item.find(match) != std::string::npos)
+                nsp++;
+
+            columns.push_back(item);
         }
+
+        // Check if coordinates data is provided:
+        coordFlag = ( columns.back().find(noCoords) == std::string::npos ) ? true : false;
 
         return nsp;
     }
@@ -156,13 +165,14 @@ namespace Utils
         std::getline(file, header);
         
         // Count number of species
-        size_t nsp = numSpeciesCsv(header);
-        //std::cout << "Number of species found in the csv file: " << nsp << std::endl;
+        bool coordFlag;
+        size_t nsp = numSpeciesCsv(header, coordFlag);
 
         // Struct with the data of the file
         auto mesh = std::make_shared<ThermData>();
         mesh->nsp = nsp;
         mesh->header = header;
+        mesh->coordFlag = coordFlag;
 
 
         /* Read dataset */
@@ -192,17 +202,19 @@ namespace Utils
             std::getline(items, item, ',');
             mesh->temp.push_back(std::stod(item));
 
-            // Read coordinates (3D)
-            Coords coords;
+            if (mesh->coordFlag){
+                // Read coordinates (3D)
+                Coords coords;
 
-            std::getline(items, item, ',');
-            coords.x = std::stod(item);
-            std::getline(items, item, ',');
-            coords.y = std::stod(item);
-            std::getline(items, item, ',');
-            coords.z = std::stod(item);
+                std::getline(items, item, ',');
+                coords.x = std::stod(item);
+                std::getline(items, item, ',');
+                coords.y = std::stod(item);
+                std::getline(items, item, ',');
+                coords.z = std::stod(item);
 
-            mesh->pos.push_back(coords);
+                mesh->pos.push_back(coords);
+            }
 
         }
 
@@ -253,13 +265,18 @@ namespace Utils
             file << mesh->enthal[i] << ',';
 
             // Write temperature
-            file << std::defaultfloat << mesh->temp[i] << ',';
+            file << std::defaultfloat << mesh->temp[i];
 
-            // Write coordinates
-            file.precision(8);
-            file << mesh->pos[i].x << ',' 
-                 << mesh->pos[i].y << ',' 
-                 << mesh->pos[i].z << std::endl;
+            if (mesh->coordFlag){
+                // Write coordinates
+                file.precision(8);
+                file << ',' << mesh->pos[i].x << ',' 
+                            << mesh->pos[i].y << ',' 
+                            << mesh->pos[i].z;
+            }
+
+            file << std::endl;
+            
         }
 
         file.close();
@@ -277,14 +294,14 @@ namespace Utils
             - number of points in the input file
             - boolean to append report or create new file
     */
-    void reportCsv(const std::string& csvFileName, const int numThreads, const size_t sizePackage,
+    void reportCsv(const std::string& csvFileName, const std::string& mechanism, const int numThreads, const size_t sizePackage,
                  const std::vector<double> time, const size_t meshPoints, bool append){
         
         std::ofstream file;
 
         if (!append){
             // Header of the data
-            std::string header {"threads,package,points,read_time[s],calc_time[s],write_time[s]"};
+            std::string header {"mechanism,threads,package,points,read_time[s],calc_time[s],write_time[s]"};
 
             // Overwrite/create mode
             file.open(csvFileName, std::ofstream::out);
@@ -296,7 +313,7 @@ namespace Utils
             
             // Report
             file << header << std::endl;
-            file << numThreads << ',' << sizePackage << ',' << meshPoints;
+            file << mechanism << ',' << numThreads << ',' << sizePackage << ',' << meshPoints;
             
             size_t n = time.size();
             for (int i = 0; i < n; i++){
@@ -315,7 +332,7 @@ namespace Utils
             }
 
             // Report
-            file << numThreads << ',' << sizePackage << ',' << meshPoints;
+            file << mechanism << ',' << numThreads << ',' << sizePackage << ',' << meshPoints;
             
             size_t n = time.size();
             for (int i = 0; i < n; i++){

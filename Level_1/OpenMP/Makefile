@@ -1,12 +1,12 @@
-include /home/alumno.upv.es/almousa/install/cantera-2.5.1-sundials-5.3.0/include/cantera/Cantera.mak
+include /home/almousa/install/cantera_alone/include/cantera/Cantera.mak
 
-CC=mpicc
-CXX=mpicxx
+CC=gcc
+CXX=g++
 RM=rm -f
 CXXFLAGS=-fopenmp -g
 CPPFLAGS=$(CANTERA_INCLUDES)
 LDFLAGS=
-LDLIBS=$(CANTERA_LIBS)
+LDLIBS=$(CANTERA_LIBS) -lyaml-cpp
 
 SRCS=main.cpp
 OBJS=$(subst .cpp,.o,$(SRCS))
