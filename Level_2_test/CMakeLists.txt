@@ -15,6 +15,9 @@ add_subdirectory(libpyjac)
 # Serial app
 add_subdirectory(app_serial)
 
+# Serial app alvaro
+add_subdirectory(app_serial_enhanced)
+
 # Installation
 # install(TARGETS app_serial DESTINATION bin)
 # install(TARGETS libpyjac DESTINATION lib)
