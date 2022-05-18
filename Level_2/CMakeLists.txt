@@ -1,23 +1,23 @@
-cmake_minimum_required(VERSION 3.1)
-project (run)
+cmake_minimum_required(VERSION 3.22.1)
+
+# Project name
+project(Standalone_Integrator LANGUAGES C CXX)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
-enable_language(CXX)
-set(CMAKE_CXX_FLAGS "-std=c++0x -O3")
-set(CMAKE_CXX_STANDARD 11)
+# enable_language(CXX)
+# set(CMAKE_CXX_FLAGS "-std=c++0x -O3")
+# set(CMAKE_CXX_STANDARD 11)
 
-find_package(Threads REQUIRED)
 
-#Sundials Include 
-include_directories("/path_to_sundials/sundials_6.1/build/include/")
+# Pyjac Library
+add_subdirectory(libpyjac)
 
-#Sundials library 
-link_libraries(-L/path_to_sundials/sundials_6.1/build/lib64/ -lsundials_cvodes -lsundials_nvecserial)
-link_directories("/path_to_sundials/sundials_6.1/build/lib64/")
+# Serial app
+add_subdirectory(app_serial)
 
-#Pyjac Includes 
-include_directories("./out/")
-#Pyjac library 
-link_libraries(./libc_pyjac.a)
+# Serial app alvaro
+add_subdirectory(app_serial_enhanced)
 
-add_executable(run_pyjac main.cpp)
+# Installation
+# install(TARGETS app_serial DESTINATION bin)
+# install(TARGETS libpyjac DESTINATION lib)

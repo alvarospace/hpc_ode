@@ -6,14 +6,25 @@ This implementation of the integrator needs functions generated from an external
 
 ## Dependencies 
 
-main.cpp - Contains csv reading funciton and integrators from sundials (6.1) 
+- CVode library from Sundials (6.2)
 
-cvodes_dydt.c - Wrapper class for cvode to get dy/dt
- 
-cvodes_jac.c - Wrapper class for cvode to get Jacobian 
+- PyJac library for right-hand function, dy/dt = f(t,y), and Analytical Jacobian matrix evaluation
 
-writeLibrary.py - A python script to compile sources generated from pyjac, complie the out/ directory 
+## Directories
 
-out  - directory that contains source and header files generated from pyjac for gri30 chemical mechanism
+- "./app_serial/" Original code for integrators (currently not working)
 
-(I tried compiling the out directory using cmake but it does not work, maybe you can take a look at this, there is a CMakeLists.txt file in out/)
+- "./app_serial_enhanced/" Fixed bugs from original and additional functionality. It depends from "utils.hpp/cpp" for reading, writing, mesh structures, etc, and "cvode_user.hpp/cpp" to link CVode and PyJac libraries
+
+## Build System
+
+Compilation of executables and PyJac library is carried out by CMake.
+
+### Instructions
+First of all, change path directory to sundials library in CMakeLists.txt of "./app_serial/" and "./app_serial_enhanced/".
+
+
+    - mkdir build
+    - cd build
+    - cmake ..
+    - make -j 4

@@ -8,8 +8,7 @@
 #include <cstring>
 
 
-void cvode_run(const std::string& inputFile, const std::string& outputFile,
-                const size_t pack_size, const bool log) {
+void cvode_run(const std::string& inputFile, const std::string& outputFile, const bool log) {
 
     /********** INPUT CONSTANTS ************/
 
@@ -17,8 +16,7 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile,
     realtype P = 101325.15;
 
     // Time step
-    realtype t0 = 0.0f;
-    realtype dt = 1;
+    realtype dt = 1e-3;
 
     // Tolorences 
     realtype reltol = RCONST(1.0e-6);
@@ -36,18 +34,6 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile,
     
     // Number of points of the mesh
     size_t n_size = mesh->points;
-
-    // Outer loop iterations
-    size_t mod = n_size % pack_size;
-    size_t ext_it = n_size / pack_size;
-
-    // If the division is not exact, add 1 extra iteration (the remainder)
-    if (mod > 0)
-        ext_it++;
-
-    std::cout << "Package size: " << pack_size << std::endl;
-    std::cout << "Number of packages: " << ext_it << std::endl;
-    std::cout << "Remainder points (will be process by the last package): " << mod << std::endl;
     /************************************************************/
 
     // Check that number of species read is the same that in pyjac library
@@ -80,17 +66,15 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile,
     // LOGGER
     if (log) {
         SUNContext_GetLogger(sunctx, &logger);
-        SUNLogger_SetErrorFilename(logger, "stderr.out");
-        SUNLogger_SetWarningFilename(logger, "stderr.out");
+        SUNLogger_SetErrorFilename(logger, "stderr");
+        SUNLogger_SetWarningFilename(logger, "stderr");
         SUNLogger_SetInfoFilename(logger, "cvode_analytic_sys.info.log");
     }
 
     SUNDIALS_MARK_FUNCTION_BEGIN(profobj);
-    
+    simTime.tic();
     for (int i = 0; i < n_size; i++) {
-        SUNDIALS_MARK_BEGIN(profobj, "Setup");
-
-        std::cout << "Iteration number: " << i << std::endl;
+        //SUNDIALS_MARK_BEGIN(profobj, "Setup");
 
         /* Memory allocation for initial conditions */
         y = N_VNew_Serial(nsp, sunctx);
@@ -108,7 +92,7 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile,
         if (check_retval((void *)cvode_mem, "CVodeCreate", 0)) exit(EXIT_FAILURE);
 
         /* CVode init dydt = dydt_cvode(t0, y) */
-        retval = CVodeInit(cvode_mem, dydt_cvode, t0, y);
+        retval = CVodeInit(cvode_mem, dydt_cvode, 0.0, y);
         if (check_retval(&retval, "CVodeInit", 1)) exit(EXIT_FAILURE);
 
         /* Call CVodeSVtolerances */
@@ -138,33 +122,28 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile,
         /* Save Constant Pressure internally in CVode memory (user data for internal functions) */
         retval = CVodeSetUserData(cvode_mem, &P);
 
-        SUNDIALS_MARK_END(profobj, "Setup");
+        //SUNDIALS_MARK_END(profobj, "Setup");
 
         /***** INTEGRATION *******/
-        SUNDIALS_MARK_BEGIN(profobj, "Integration");
-
-        simTime.tic();
+        //SUNDIALS_MARK_BEGIN(profobj, "Integration");
+        realtype t0 = 0.0f;
         retval = CVode(cvode_mem, dt, y, &t0, CV_NORMAL);
-        
+
         // Calculation of the last element (mass convervation)
         realtype y_nsp = 0.0f;
         for (int j = 1; j < nsp; j++) {
             y_nsp += yptr[j];
         }
-        y_nsp = 1 - y_nsp;
+        y_nsp = 1.0 - y_nsp;
 
-        simTime.toc();
-        SUNDIALS_MARK_END(profobj, "Integration");
+        //SUNDIALS_MARK_END(profobj, "Integration");
         /*************************/
 
-
-        std::cout << "retval CVode: " << retval << std::endl;
-        std::cout << "Point: " << i << "\tTime: " << simTime.time() << std::endl;
 
         /* Save mass fraction results */
         mesh->temp[i] = yptr[0];
         std::memcpy(mesh->matSp[i].data(), yptr+1, (nsp-1) * sizeof(realtype));
-        mesh->matSp[i].data()[nsp-1] = y_nsp;
+        mesh->matSp[i][nsp-1] = y_nsp;
 
         /* Free Memory */
         N_VDestroy(y);
@@ -172,16 +151,57 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile,
         SUNLinSolFree(LS);                        
         SUNMatDestroy(J);
     }
+    simTime.toc();
     SUNDIALS_MARK_FUNCTION_END(profobj);
+
+    std::cout << "Calculation time: " << simTime.time() << " s" << std::endl;
+
+    /* Write results for validation */
+    Utils::writeCsv(mesh, outputFile); 
+
+    FILE *fid;
+    fid = fopen("profiling.txt", "w");
+    SUNProfiler_Print(profobj, fid);
+    fclose(fid);
 }
 
 int main(int argc, char *argv[]) {
-    std::string inputFile {"/home/almousa/TFM/hpc_cvode/ref_data/res_gri_1.csv"}; 
-    std::string outputFile {"out.csv"};
-    size_t pack_size {10};
-    bool log {true};
+    std::string inputFile {"../../../ref_data/res_gri3.0.csv"}; 
+    std::string outputFile {"results.csv"};
+    bool log {false};
 
-    cvode_run(inputFile, outputFile, pack_size, log);
+     /* Command-line arguments logic */
+    std::vector<std::string> args;
+    if (argc > 1) {
+        for (int i = 0; i < argc; i++) {
+            args.push_back(std::string(argv[i]));
+        }
+
+        if (args[1].compare("--help") == 0 || args[1].compare("-h") == 0) {
+            std::cout << "Usage: " << args[0] <<" [input file=../../../ref_data/res_gri3.0.csv] [output file=results.csv] [log=0]" << std::endl;
+            return 0;
+        } else {
+            if (argc == 2) {
+                inputFile = args[1];
+            } else if (argc == 3) {
+                inputFile = args[1];
+                outputFile = args[2];
+            } else if (argc == 4) {
+                inputFile = args[1];
+                outputFile = args[2];
+                if (std::stoi(args[3]) == 1)
+                    log = true;
+            } else {
+                std::cout << "Too many arguments..." << std::endl;
+                return EXIT_FAILURE;
+            }
+        }
+    }
+
+    /* Run integrator */
+    cvode_run(inputFile, outputFile, log);
+
+    return EXIT_SUCCESS;
 }
 
 

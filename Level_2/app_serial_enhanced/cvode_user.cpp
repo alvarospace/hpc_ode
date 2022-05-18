@@ -3,20 +3,11 @@
 int eval_jacob_cvode(double t, N_Vector y, N_Vector ydot, SUNMatrix jac, void* f, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
 {       
 	double* local_y = NV_DATA_S(y);
-
-	double *temp = (double*) malloc( NSP*NSP * sizeof(double));
-    
-	eval_jacob((double)t, *(double*)f, local_y, (double*)temp);
-
-  double **cols = SM_COLS_D(jac);
-
-	for (int j=0; j < NSP; j++) {
-	    for (int i=0; i < NSP; i++) {
-	        cols[j][i] = temp[i*NSP + j];
-	    }
-	}
+  double* jacptr = SM_DATA_D(jac);
   
-  free(temp);
+  /* Jacobian evaluation by PyJac is in column-major, same as Sundials */
+	eval_jacob((double)t, *(double*)f, local_y, (double*)jacptr);
+
 	return 0;
 }
 
