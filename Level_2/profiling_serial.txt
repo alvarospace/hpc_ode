@@ -1,0 +1,35 @@
+
+================================================================================================================
+SUNDIALS GIT VERSION: 
+SUNDIALS PROFILER: SUNContext Default
+Results:                                	 % time (inclusive) 	 max/rank 	 average/rank 	 count 
+================================================================================================================
+From profiler epoch                     	 100.00% 	         120.451106s 	 120.451106s 	 2
+cvode_run                               	 100.00% 	         120.451044s 	 120.451044s 	 1
+CVode                                   	  99.53% 	         119.888559s 	 119.888559s 	 55076
+SUNNonlinSolSolve                       	  86.97% 	         104.759703s 	 104.759703s 	 1317841
+SUNLinSolSetup                          	  32.69% 	         39.378391s 	 39.378391s 	 386386
+SUNLinSolSolve                          	  14.00% 	         16.865558s 	 16.865558s 	 1593452
+N_VLinearSum                            	   3.49% 	         4.200309s 	 4.200309s 	 19330156
+SUNMatScaleAddI                         	   2.71% 	         3.262070s 	 3.262070s 	 386386
+SUNMatCopy                              	   2.23% 	         2.689503s 	 2.689503s 	 386386
+N_VWrmsNorm                             	   1.64% 	         1.977971s 	 1.977971s 	 5732422
+N_VScale                                	   1.41% 	         1.701090s 	 1.701090s 	 8187044
+N_VScaleAddMulti                        	   0.68% 	         0.814935s 	 0.814935s 	 1352728
+N_VConst                                	   0.48% 	         0.572755s 	 0.572755s 	 2911595
+N_VAbs                                  	   0.29% 	         0.347581s 	 0.347581s 	 1460637
+SUNMatZero                              	   0.26% 	         0.312370s 	 0.312370s 	 66279
+N_VInv                                  	   0.25% 	         0.304494s 	 0.304494s 	 1405561
+CVodeInit                               	   0.24% 	         0.294994s 	 0.294994s 	 55076
+N_VAddConst                             	   0.23% 	         0.278042s 	 0.278042s 	 1350485
+N_VClone                                	   0.16% 	         0.197086s 	 0.197086s 	 881216
+N_VScaleVectorArray                     	   0.11% 	         0.129827s 	 0.129827s 	 341874
+CVodeGetDky                             	   0.04% 	         0.046601s 	 0.046601s 	 55076
+SUNMatClone                             	   0.02% 	         0.029616s 	 0.029616s 	 55076
+N_VLinearCombination                    	   0.02% 	         0.027736s 	 0.027736s 	 55076
+N_VDiv                                  	   0.01% 	         0.012980s 	 0.012980s 	 55076
+N_VMaxNorm                              	   0.01% 	         0.011262s 	 0.011262s 	 55076
+SUNNonlinSolInitialize                  	   0.01% 	         0.007436s 	 0.007436s 	 55076
+SUNLinSolInitialize                     	   0.01% 	         0.006576s 	 0.006576s 	 55076
+Est. profiler overhead                  	   0.06% 	         7.041915s 	 -- 		 -- 
+

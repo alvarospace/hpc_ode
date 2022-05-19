@@ -5,8 +5,8 @@
 #include <nvector/nvector_serial.h>
 
 extern "C"{
-#include "dydt.h"
-#include "jacob.h"
+#include <libpyjac/dydt.h>
+#include <libpyjac/jacob.h>
 }
 
 #include <ctime>
