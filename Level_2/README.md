@@ -21,10 +21,13 @@ This implementation of the integrator needs functions generated from an external
 Compilation of executables and PyJac library is carried out by CMake.
 
 ### Instructions
-First of all, change path directory to sundials library in CMakeLists.txt of "./app_serial/" and "./app_serial_enhanced/".
-
 
     - mkdir build
     - cd build
     - cmake ..
     - make -j 4
+
+### Setting CMake to build with atypical Sundials path
+
+    - cmake -DSUNDIALS_EXTERN_ENABLE=ON -DSUNDIALS_EXTERN_LIBS=<path/sundials/lib/> -DSUNDIALS_EXTERN_INCLUDE_PATH=/path/sundials/include/ ..
+
