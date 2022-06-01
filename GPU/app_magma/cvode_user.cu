@@ -1,4 +1,4 @@
-#include <app_openmp/cvode_user.hpp>
+#include <app_magma/cvode_user.cuh>
 
 int eval_jacob_cvode(double t, N_Vector y, N_Vector ydot, SUNMatrix jac, void* f, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
 {       
@@ -11,13 +11,48 @@ int eval_jacob_cvode(double t, N_Vector y, N_Vector ydot, SUNMatrix jac, void* f
 	return 0;
 }
 
-int dydt_cvode(realtype t, N_Vector y, N_Vector ydot, void* f)
+int dydt_cvode(realtype t, N_Vector y, N_Vector ydot, void* userData)
 {
-	double* local_y = NV_DATA_S(y);
-	double* local_dy = NV_DATA_S(ydot);
-	dydt((double)t, *(double*)f, local_y, local_dy);
-	return 0;
+  UserData *uData;
+  realtype *yptr, *ydotptr, *yptrPy, *ydotptrPy;
+
+  uData = (UserData*) userData;
+  yptrPy = uData->h_mem->y;
+  ydotptrPy = uData->h_mem->dy;
+
+  yptr = N_VGetDeviceArrayPointer(y);
+  ydotptr = N_VGetDeviceArrayPointer(ydot);
+
+  /* Copy initial condition to PyJac interface */
+  cudaErrorCheck ( cudaMemcpy(yptrPy, yptr, uData->nEquations * sizeof(double), cudaMemcpyDeviceToDevice) );
+
+
+  size_t nBlocks = (int) ceil( ((float) uData->nEquations) / BLOCKSIZE );
+  dim3 dimGrid ( nBlocks );
+  dim3 dimBlock ( BLOCKSIZE );
+
+  /* Kernel Call */
+  kernel_dydt<<< dimGrid, dimBlock >>>(uData->nEquations, t, uData->Pressure, yptrPy, ydotptrPy, uData->d_mem);
+  
+  cudaDeviceSynchronize();
+  cudaError_t cudaErr = cudaGetLastError();
+  if (cudaErr != cudaSuccess) {
+    fprintf(stderr, "\t ERROR in 'dydt_cvode': cudaGetLastError returned %s", cudaGetErrorName(cudaErr));
+    return -1;
+  }
+
+  /* Copy results to sundials interface */
+  cudaErrorCheck ( cudaMemcpy(ydotptr, ydotptrPy, uData->nEquations * sizeof(double), cudaMemcpyDeviceToDevice) );
+
+  return 0;
 }
+
+__global__ kernel_dydt(const int nEquations, const double t, const double P, const double *y, const double* dy, const mechanism_memory *d_mem) {
+  if (T_ID < nEquations)
+    dydt(t, P, y, dy, d_mem);
+}
+
+
 
 
 /*

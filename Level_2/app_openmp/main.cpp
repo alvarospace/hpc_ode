@@ -1,8 +1,8 @@
 // CVODE INCLUDES
-#include <app_serial_enhanced/cvode_user.hpp>
+#include <app_openmp/cvode_user.hpp>
 
 // UTILS
-#include <app_serial_enhanced/utils.hpp>
+#include <app_openmp/utils.hpp>
 
 // Include for memcpy
 #include <cstring>

@@ -1,4 +1,4 @@
-#include <app_openmp/utils.hpp>
+#include <app_magma/utils.hpp>
 
 
 namespace Utils
