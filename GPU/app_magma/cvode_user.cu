@@ -1,38 +1,27 @@
 #include <app_magma/cvode_user.cuh>
 
-int eval_jacob_cvode(double t, N_Vector y, N_Vector ydot, SUNMatrix jac, void* f, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
-{       
-	double* local_y = NV_DATA_S(y);
-  double* jacptr = SM_DATA_D(jac);
-  
-  /* Jacobian evaluation by PyJac is in column-major, same as Sundials */
-	eval_jacob((double)t, *(double*)f, local_y, (double*)jacptr);
-
-	return 0;
-}
-
-int dydt_cvode(realtype t, N_Vector y, N_Vector ydot, void* userData)
+int eval_jacob_cvode(double t, N_Vector y, N_Vector ydot, SUNMatrix J, void* userData, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
 {
-  UserData *uData;
-  realtype *yptr, *ydotptr, *yptrPy, *ydotptrPy;
+  UserData *uData = (UserData*) userData;
+  realtype *Jptr, *yptr, *JptrPy, *yptrPy;
 
-  uData = (UserData*) userData;
-  yptrPy = uData->h_mem->y;
-  ydotptrPy = uData->h_mem->dy;
-
+  Jptr = SUNMatrix_MagmaDense_Data(J);
   yptr = N_VGetDeviceArrayPointer(y);
-  ydotptr = N_VGetDeviceArrayPointer(ydot);
 
-  /* Copy initial condition to PyJac interface */
-  cudaErrorCheck ( cudaMemcpy(yptrPy, yptr, uData->nEquations * sizeof(double), cudaMemcpyDeviceToDevice) );
+  /* Length of batched Jacobian matrix (should be = NSP * NSP * gpu_points) */
+  // sunindextype JLength = SUNMatrix_MagmaDense_LData(J);
 
+  JptrPy = uData->h_mem->jac;
+  yptrPy = uData->h_mem->y;
 
-  size_t nBlocks = (int) ceil( ((float) uData->nEquations) / BLOCKSIZE );
+  
+  // Each GPU thread evaluate 1 jacobian matrix (1 system per thread)
+  size_t nBlocks = (int) ceil( ((float) uData->nSystems) / BLOCKSIZE );
   dim3 dimGrid ( nBlocks );
   dim3 dimBlock ( BLOCKSIZE );
 
-  /* Kernel Call */
-  kernel_dydt<<< dimGrid, dimBlock >>>(uData->nEquations, t, uData->Pressure, yptrPy, ydotptrPy, uData->d_mem);
+  /* Kernel call */
+  kernel_eval_jacob<<< dimGrid, dimBlock >>>(uData->nSystems, t, uData->Pressure, yptr, Jptr, yptrPy, JptrPy, uData->d_mem);
   
   cudaDeviceSynchronize();
   cudaError_t cudaErr = cudaGetLastError();
@@ -41,17 +30,139 @@ int dydt_cvode(realtype t, N_Vector y, N_Vector ydot, void* userData)
     return -1;
   }
 
-  /* Copy results to sundials interface */
+	return 0;
+}
+
+int dydt_cvode(realtype t, N_Vector y, N_Vector ydot, void* userData)
+{
+  UserData *uData = (UserData*) userData;
+  realtype *yptr, *ydotptr, *yptrPy, *ydotptrPy;
+
+  yptr = N_VGetDeviceArrayPointer(y);
+  ydotptr = N_VGetDeviceArrayPointer(ydot);
+
+  yptrPy = uData->h_mem->y;
+  ydotptrPy = uData->h_mem->dy;
+
+  // Each GPU thread evaluate 1 dydt system
+  size_t nBlocks = (int) ceil( ((float) uData->nSystems) / BLOCKSIZE );
+  dim3 dimGrid ( nBlocks );
+  dim3 dimBlock ( BLOCKSIZE );
+
+  /* Kernel Call */
+  kernel_dydt<<< dimGrid, dimBlock >>>(uData->nSystems, t, uData->Pressure, yptr, ydotptr, yptrPy, ydotptrPy, uData->d_mem);
+  
+  cudaDeviceSynchronize();
+  cudaError_t cudaErr = cudaGetLastError();
+  if (cudaErr != cudaSuccess) {
+    fprintf(stderr, "\t ERROR in 'dydt_cvode': cudaGetLastError returned %s", cudaGetErrorName(cudaErr));
+    return -1;
+  }
+
+  /* Copy results to sundials interface (maybe its not necessary, pyjac use the same data structure than cvode)*/
   cudaErrorCheck ( cudaMemcpy(ydotptr, ydotptrPy, uData->nEquations * sizeof(double), cudaMemcpyDeviceToDevice) );
 
   return 0;
 }
 
-__global__ kernel_dydt(const int nEquations, const double t, const double P, const double *y, const double* dy, const mechanism_memory *d_mem) {
-  if (T_ID < nEquations)
-    dydt(t, P, y, dy, d_mem);
+__global__ void kernel_dydt(const int nSystems, const double t, const double P, const double *ySun, const double* dySun,
+                            const double *yPy, const double *dyPy, const mechanism_memory *d_mem) {
+  if (T_ID < nSystems) {
+    // Reorder data for PyJac
+    sun_to_pyjac_Y(ySun, yPy);
+
+    dydt(t, P, yPy, dyPy, d_mem);
+
+    // Reorder data back to Sundials
+    pyjac_to_sun_Y(dyPy, dySun);
+  }
 }
 
+__global__ void kernel_eval_jacob(const int nSystems, const double t, const double P, const double *ySun, const double *JSun,
+                                  const double *yPy, const double *JPy, const mechanism_memory *d_mem) {
+
+  if (T_ID < nSystems) {
+    // Reorder data for PyJac
+    sun_to_pyjac_YJ(ySun, yPy, JSun, JPy);
+
+    // Jacobian analytic evaluation with PyJac
+    eval_jacob(t, P, yPy, JPy, d_mem);
+
+    // Reorder data back to Sundials
+    pyjac_to_sun_YJ(yPy, ySun, JPy, JSun);
+  }
+}
+
+__device__ void sun_to_pyjac_YJ(const double *ySun, const double *yPy, const double *JSun, const double *JPy) {
+
+  int threadID = threadIdx.x + blockIdx.x * blockDim.x;
+
+  // PyJac index -> #define INDEX(i) (T_ID + (i) * GRID_DIM)
+
+  // ySun = {T0, Y00, Y01, ... Y0(NSP-1), T1, Y10, Y11, ... Y1(NSP-1), ...}
+  // yPy  = {T0,  T1,  T2, ...  TNSP, Y00, Y10, Y20, ..., Y(nSystems)0, Y01, Y11, Y21, ..., Y(nSystems)1, ...}
+
+  // JSun = {J0, J1, ..., J(nSystems)} Each matrix is ordered column-major
+  // JPy  = same structure that yPy, ordered column major
+
+  for (int j = 0; j < NSP; j++) {
+    // Location of the first system element for the current thread for "y" vector
+    int sunSystemY = threadID * NSP;
+
+    yPy[INDEX(j)] = ySun[sunSystemY + j];
+
+
+    // Location of the first element of the system Jacobian matrix
+    int sunSystemJac = threadID * NSP * NSP;
+
+    for (int i = 0; i < NSP; i++) {
+      JPy[INDEX(j*NSP + i)] =  JSun[sunSystemJac + j*NSP + i];
+    }
+  }
+}
+
+__device__ void pyjac_to_sun_YJ(const double *yPy, const double *ySun, const double *JPy, const double *JSun) {
+
+  int threadID = threadIdx.x + blockIdx.x * blockDim.x;
+
+    for (int j = 0; j < NSP; j++) {
+    // Location of the first system element for the current thread for "y" vector
+    int sunSystemY = threadID * NSP;
+
+    ySun[sunSystemY + j] = yPy[INDEX(j)];
+
+    // Location of the first element of the system Jacobian matrix
+    int sunSystemJac = threadID * NSP * NSP;
+
+    for (int i = 0; i < NSP; i++) {
+      JSun[sunSystemJac + j*NSP + i] = JPy[INDEX(j * NSP + i)];
+    }
+  }
+
+}
+
+__device__ void sun_to_pyjac_Y(const double *ySun, const double *yPy) {
+
+  int threadID = threadIdx.x + blockIdx.x * blockDim.x;
+
+  // PyJac index -> #define INDEX(i) (T_ID + (i) * GRID_DIM)
+
+  // ySun = {T0, Y00, Y01, ... Y0(NSP-1), T1, Y10, Y11, ... Y1(NSP-1), ...}
+  // yPy  = {T0,  T1,  T2, ...  TNSP, Y00, Y10, Y20, ..., Y(nSystems)0, Y01, Y11, Y21, ..., Y(nSystems)1, ...}
+
+  for (int i = 0; i < NSP; i++) {
+    yPy[INDEX(i)] = ySun[threadID * NSP + i];
+  }
+}
+
+__device__ void pyjac_to_sun_Y(const double *yPy, const double *ySun) {
+
+  int threadID = threadIdx.x + blockIdx.x * blockDim.x;
+
+  for (int i = 0; i < NSP; i++) {
+    ySun[threadID * NSP + i] = yPy[INDEX(i)];
+  }
+}
 
 
 

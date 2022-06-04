@@ -59,7 +59,7 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile,
     // Variables declarations
     int m_maxsteps = 10000;
 
-    // // Problem size has to be "sunindextype", NSP counting batch
+    // // Problem size has to be "sunindextype", NSP * nBatch
     sunindextype nsp_GPU;
 
     /* Sundials context creation and automatic free memory (C++ feature) */
@@ -113,7 +113,7 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile,
         // Problem size for GPU
         nsp_GPU = NSP * gpu_points;
         userData->nEquations = nsp_GPU;
-        userData->nBlocks = gpu_points;
+        userData->nSystems = gpu_points;
 
         // Vector allocation and initial conditions
         y = N_VNew_Cuda(nsp_GPU, sunctx);
