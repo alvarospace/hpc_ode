@@ -67,10 +67,11 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile,
 
 
     /* Cvode mem */
-    void* cvode_mem;
+    void* cvode_mem = NULL;
 
     /* CUDA Memory helper (sundials help managing copies between CPU and device) */
     SUNMemoryHelper cuda_mem_help;
+    cuda_mem_help = SUNMemoryHelper_Cuda(sunctx);
 
     /* Data variables */
     N_Vector y;
@@ -104,7 +105,7 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile,
         
 
         // CVode User defined data to access in user supplied functions
-        UserData *userData;
+        UserData *userData = new UserData;
         userData->Pressure = P;
         userData->h_mem = h_mem;
         userData->d_mem = d_mem;
@@ -126,15 +127,22 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile,
             size_t lIndex = j * NSP;
 
             yptr[lIndex] = mesh->temp[gIndex];
-            std::memcpy(yptr[lIndex] + 1, mesh->matSp[gIndex].data(), (NSP - 1) * sizeof(realtype));
+            std::memcpy(&yptr[lIndex] + 1, mesh->matSp[gIndex].data(), (NSP - 1) * sizeof(realtype));
         }
-
+        
         // Copy initial data to GPU
         N_VCopyToDevice_Cuda(y);
+
+        /* Call CVodeCreate to create the solver memory and specify the
+         * Backward Differentiation Formula */
+        cvode_mem = CVodeCreate(CV_BDF, sunctx);
+        if (check_retval((void *)cvode_mem, "CVodeCreate", 0)) exit(EXIT_FAILURE);
+
 
         /* CVode init dydt = dydt_cvode(t0, y) */
         retval = CVodeInit(cvode_mem, dydt_cvode, 0.0, y);
         if (check_retval(&retval, "CVodeInit", 1)) exit(EXIT_FAILURE);
+
 
         /* Save UserData structure internally in CVode */
         retval = CVodeSetUserData(cvode_mem, userData);
@@ -144,9 +152,11 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile,
         retval = CVodeSStolerances(cvode_mem, reltol, abstol);
         if (check_retval(&retval, "CVodeSStolerances", 1)) exit(EXIT_FAILURE);
 
+
         /* Create SUNMatrix for use in linear solves */
         J = SUNMatrix_MagmaDenseBlock(gpu_points, NSP, NSP, SUNMEMTYPE_DEVICE, cuda_mem_help, NULL, sunctx);
         if(check_retval((void *)J, "SUNMatrix_MagmaDenseBlock", 0)) exit(EXIT_FAILURE);
+        
 
         /* Create dense SUNLinearSolver (for magma library) */
         LS = SUNLinSol_MagmaDense(y, J, sunctx);
@@ -188,7 +198,7 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile,
             }
 
             mesh->temp[gIndex] = yptr[lIndex];
-            std::memcpy(mesh->matSp[gIndex].data(), yptr[lIndex] + 1, (NSP-1) * sizeof(realtype));
+            std::memcpy(mesh->matSp[gIndex].data(), &yptr[lIndex] + 1, (NSP-1) * sizeof(realtype));
             mesh->matSp[gIndex][NSP-1] = yLast[lIndex];
         }
 
@@ -196,6 +206,7 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile,
         /* Free Memory */
         free_gpu_memory(&h_mem, &d_mem);
         delete(h_mem);
+        delete(userData);
 
         N_VDestroy(y);
         CVodeFree(&cvode_mem);
@@ -208,6 +219,7 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile,
 
     /* Write results for validation */
     Utils::writeCsv(mesh, outputFile); 
+    std::cout << "AQUI LLEGO" << std::endl;
 }
 
 int main(int argc, char *argv[]) {

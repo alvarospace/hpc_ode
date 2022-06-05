@@ -7,18 +7,18 @@ namespace Utils
     /*
         Print number of active threads
     */
-    int printNumThreads(){
-        int numThreads;
-        #pragma omp parallel
-        {
-            int id = omp_get_thread_num();
-            if (id == 0){
-                numThreads = omp_get_num_threads();
-                std::cout << "Number of threads: " << numThreads << std::endl;
-            }
-        }
-        return numThreads;
-    }
+    // int printNumThreads(){
+    //     int numThreads;
+    //     #pragma omp parallel
+    //     {
+    //         int id = omp_get_thread_num();
+    //         if (id == 0){
+    //             numThreads = omp_get_num_threads();
+    //             std::cout << "Number of threads: " << numThreads << std::endl;
+    //         }
+    //     }
+    //     return numThreads;
+    // }
 
     /*
         Count the number of species are in the input file

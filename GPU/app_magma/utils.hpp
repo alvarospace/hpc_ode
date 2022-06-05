@@ -11,7 +11,7 @@
 #include <iostream>
 #include <iomanip>
 #include <chrono>
-#include <omp.h>
+//#include <omp.h>
 #include <vector>
 #include <memory>
 
@@ -84,7 +84,7 @@ namespace Utils
     /*
         Print number of active threads
     */
-    int printNumThreads();
+    //int printNumThreads();
 
 
     /*

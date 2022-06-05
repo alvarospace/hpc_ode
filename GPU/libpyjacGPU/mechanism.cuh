@@ -4,7 +4,7 @@
 #ifdef __GNUG__
 #include <cuda.h>
 #include <cuda_runtime.h>
-#include <helper_cuda.h>
+//#include <helper_cuda.h>
 #include "launch_bounds.cuh"
 #include "gpu_macros.cuh"
 #endif
