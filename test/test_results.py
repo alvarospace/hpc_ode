@@ -20,9 +20,6 @@ class Model:
 
 
 
-def print_table(rows, header):
-    pass
-
 if __name__ == "__main__":
 
     # Check for input reference file

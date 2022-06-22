@@ -15,7 +15,7 @@
 
 
 // CUDA block size
-#define BLOCKSIZE 16
+#define BLOCKSIZE 32
 
 /* Struct to CVode User Data */
 struct UserData {
