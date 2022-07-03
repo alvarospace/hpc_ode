@@ -27,11 +27,12 @@ int calc_gpu_points(int total_points, int &real_calculated_points) {
     int padded = int(ceil(real_calculated_points / float(BLOCKSIZE)) * BLOCKSIZE);
 
     if (padded == 0) {
-        std::cout << "Mechanism is too large, cannot allocate any point... exiting program." << std::endl; 
+        std::cout << "Mechanism is too large, cannot allocate any point... exiting program." << std::endl;
+        exit(EXIT_FAILURE);
     }
 
     std::cout << "Initializing PyJac GPU memory..." << std::endl;
-    std::cout << "Num points in this iteration: " << padded << std::endl;
+    std::cout << "GPU allocated points in this iteration: " << padded << std::endl;
     return padded;
 }
 
@@ -100,12 +101,13 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
     int retval;
     /*************/
 
+    simTime.tic();
+
     size_t calculated_points = 0;
     while (calculated_points < n_size) {
 
         int gpu_points;
-        int padded = calc_gpu_points(n_size, gpu_points);
-
+        int padded = calc_gpu_points(n_size - calculated_points, gpu_points);
         /* Start initialization rutine for GPU */
 
         // GPU PyJac memory allocation requirements
@@ -230,8 +232,6 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
 
     /* Write results for validation */
     Utils::writeCsv(mesh, outputFile); 
-
-    printf("AQUI LLEGO TERMINA LA SIMU\n");
 }
 
 int main(int argc, char *argv[]) {
@@ -263,7 +263,7 @@ int main(int argc, char *argv[]) {
 
     /* Run integrator */
     cvode_run(inputFile, outputFile);
-
+    
     return EXIT_SUCCESS;
 }
 
