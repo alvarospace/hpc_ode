@@ -29,5 +29,5 @@ Compilation of executables and PyJac library is carried out by CMake.
 
 ### Setting CMake to build with atypical Sundials path
 
-    - cmake -DSUNDIALS_EXTERN_ENABLE=ON -DSUNDIALS_EXTERN_LIBS=<path/sundials/lib/> -DSUNDIALS_EXTERN_INCLUDE_PATH=/path/sundials/include/ ..
+    - cmake -DSUNDIALS_EXTERN_ENABLE=ON -DSUNDIALS_EXTERN_LIBS=<path/sundials/lib/> -DSUNDIALS_EXTERN_INCLUDE_PATH=</path/sundials/include/> ..
 

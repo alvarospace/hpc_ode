@@ -203,13 +203,15 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
             size_t gIndex = calculated_points + j;
             size_t lIndex = j * NSP;
 
+            realtype aux = 0.0f;
             for (int k = 1; k < NSP; k++) {
-                yLast[lIndex] += yptr[lIndex + k];
+                aux += yptr[lIndex + k];
             }
+            yLast[j] = 1.0f - aux;
 
             mesh->temp[gIndex] = yptr[lIndex];
             std::memcpy(mesh->matSp[gIndex].data(), &yptr[lIndex] + 1, (NSP-1) * sizeof(realtype));
-            mesh->matSp[gIndex][NSP-1] = yLast[lIndex];
+            mesh->matSp[gIndex][NSP-1] = yLast[j];
         }
 
 
