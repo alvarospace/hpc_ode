@@ -41,8 +41,8 @@ void initialize_gpu_memory(int padded, mechanism_memory** h_mem, mechanism_memor
   // Allocate storage for the device struct
   cudaErrorCheck( cudaMalloc(d_mem, sizeof(mechanism_memory)) );
   //allocate the device arrays on the host pointer
-  // cudaErrorCheck( cudaMalloc(&((*h_mem)->y), NSP * padded * sizeof(double)) );
-  // cudaErrorCheck( cudaMalloc(&((*h_mem)->dy), NSP * padded * sizeof(double)) );
+  cudaErrorCheck( cudaMalloc(&((*h_mem)->y), NSP * padded * sizeof(double)) );
+  cudaErrorCheck( cudaMalloc(&((*h_mem)->dy), NSP * padded * sizeof(double)) );
   cudaErrorCheck( cudaMalloc(&((*h_mem)->conc), NSP * padded * sizeof(double)) );
   cudaErrorCheck( cudaMalloc(&((*h_mem)->fwd_rates), FWD_RATES * padded * sizeof(double)) );
   cudaErrorCheck( cudaMalloc(&((*h_mem)->rev_rates), REV_RATES * padded * sizeof(double)) );
@@ -50,20 +50,20 @@ void initialize_gpu_memory(int padded, mechanism_memory** h_mem, mechanism_memor
   cudaErrorCheck( cudaMalloc(&((*h_mem)->cp), NSP * padded * sizeof(double)) );
   cudaErrorCheck( cudaMalloc(&((*h_mem)->h), NSP * padded * sizeof(double)) );
   cudaErrorCheck( cudaMalloc(&((*h_mem)->dBdT), NSP * padded * sizeof(double)) );
-  // cudaErrorCheck( cudaMalloc(&((*h_mem)->jac), NSP * NSP * padded * sizeof(double)) );
+  cudaErrorCheck( cudaMalloc(&((*h_mem)->jac), NSP * NSP * padded * sizeof(double)) );
   cudaErrorCheck( cudaMalloc(&((*h_mem)->var), 1 * padded * sizeof(double)) );
   cudaErrorCheck( cudaMalloc(&((*h_mem)->J_nplusjplus), NSP * padded * sizeof(double)) );
   cudaErrorCheck( cudaMalloc(&((*h_mem)->pres_mod), PRES_MOD_RATES * padded * sizeof(double)) );
   cudaErrorCheck( cudaMemset((*h_mem)->spec_rates, 0, NSP * padded * sizeof(double)) );
-  // cudaErrorCheck( cudaMemset((*h_mem)->dy, 0, NSP * padded * sizeof(double)) );
-  // cudaErrorCheck( cudaMemset((*h_mem)->jac, 0, NSP * NSP * padded * sizeof(double)) );
+  cudaErrorCheck( cudaMemset((*h_mem)->dy, 0, NSP * padded * sizeof(double)) );
+  cudaErrorCheck( cudaMemset((*h_mem)->jac, 0, NSP * NSP * padded * sizeof(double)) );
   cudaErrorCheck( cudaMemcpy(*d_mem, *h_mem, sizeof(mechanism_memory), cudaMemcpyHostToDevice) );
   //zero out required values
 }
 void free_gpu_memory(mechanism_memory** h_mem, mechanism_memory** d_mem)
 {
-  // cudaErrorCheck(cudaFree((*h_mem)->y));
-  // cudaErrorCheck(cudaFree((*h_mem)->dy));
+  cudaErrorCheck(cudaFree((*h_mem)->y));
+  cudaErrorCheck(cudaFree((*h_mem)->dy));
   cudaErrorCheck(cudaFree((*h_mem)->conc));
   cudaErrorCheck(cudaFree((*h_mem)->fwd_rates));
   cudaErrorCheck(cudaFree((*h_mem)->rev_rates));
@@ -71,7 +71,7 @@ void free_gpu_memory(mechanism_memory** h_mem, mechanism_memory** d_mem)
   cudaErrorCheck(cudaFree((*h_mem)->cp));
   cudaErrorCheck(cudaFree((*h_mem)->h));
   cudaErrorCheck(cudaFree((*h_mem)->dBdT));
-  // cudaErrorCheck(cudaFree((*h_mem)->jac));
+  cudaErrorCheck(cudaFree((*h_mem)->jac));
   cudaErrorCheck(cudaFree((*h_mem)->var));
   cudaErrorCheck(cudaFree((*h_mem)->J_nplusjplus));
   cudaErrorCheck(cudaFree((*h_mem)->pres_mod));

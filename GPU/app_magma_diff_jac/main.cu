@@ -1,8 +1,8 @@
 // CVODE INCLUDES
-#include <app_magma_v2/cvode_user.cuh>
+#include <app_magma_diff_jac/cvode_user.cuh>
 
 // UTILS
-#include <app_magma_v2/utils.hpp>
+#include <app_magma_diff_jac/utils.hpp>
 
 // Include for memcpy
 #include <cstring>
@@ -11,11 +11,10 @@
 #define MAX_GPU_MEM_PYJAC 0.8
 
 
-int calc_gpu_points(int total_points) {
+int calc_gpu_points(int total_points, int &real_calculated_points) {
     size_t mech_size = required_mechanism_size();
     size_t free_mem = 0;
     size_t total_mem = 0;
-    int real_calculated_points = 0;
 
     cudaErrorCheck( cudaMemGetInfo(&free_mem, &total_mem) );
 
@@ -24,14 +23,17 @@ int calc_gpu_points(int total_points) {
     // Choose between the remaining points and the maximum allocatable 
     real_calculated_points = min(total_points, max_allocated_points);
 
-    if (real_calculated_points == 0) {
+    // Transform padded in a number multiple of BLOCKSIZE, ej: 1000 -> 1024
+    int padded = int(ceil(real_calculated_points / float(BLOCKSIZE)) * BLOCKSIZE);
+
+    if (padded == 0) {
         std::cout << "Mechanism is too large, cannot allocate any point... exiting program." << std::endl;
         exit(EXIT_FAILURE);
     }
 
     std::cout << "Initializing PyJac GPU memory..." << std::endl;
-    std::cout << "GPU allocated points in this iteration: " << real_calculated_points << std::endl;
-    return real_calculated_points;
+    std::cout << "GPU allocated points in this iteration: " << padded << std::endl;
+    return padded;
 }
 
 
@@ -92,7 +94,7 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
 
     /* Data variables */
     N_Vector y;
-    realtype *yptr = nullptr;
+    realtype *yptr;
     SUNMatrix J;
     SUNLinearSolver LS;
 
@@ -104,13 +106,22 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
     size_t calculated_points = 0;
     while (calculated_points < n_size) {
 
-        int gpu_points = calc_gpu_points(n_size - calculated_points);
-        
+        int gpu_points;
+        int padded = calc_gpu_points(n_size - calculated_points, gpu_points);
         /* Start initialization rutine for GPU */
+
+        // GPU PyJac memory allocation requirements
+        mechanism_memory *h_mem, *d_mem;
+        h_mem = new mechanism_memory;
+        initialize_gpu_memory(padded, &h_mem, &d_mem);
+        
 
         // CVode User defined data to access in user supplied functions
         UserData *userData = new UserData;
         userData->Pressure = P;
+        userData->h_mem = h_mem;
+        userData->d_mem = d_mem;
+
 
         // Problem size for GPU
         nsp_GPU = NSP * gpu_points;
@@ -120,21 +131,7 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
         // Vector allocation and initial conditions
         y = N_VNew_Cuda(nsp_GPU, sunctx);
         if (check_retval((void *)y, "N_VNew_CUDA", 0)) exit(EXIT_FAILURE);
-        yptr = N_VGetHostArrayPointer_Cuda(y);
-
-        /* Create SUNMatrix for use in linear solves */
-        J = SUNMatrix_MagmaDenseBlock(gpu_points, NSP, NSP, SUNMEMTYPE_DEVICE, cuda_mem_help, NULL, sunctx);
-        if(check_retval((void *)J, "SUNMatrix_MagmaDenseBlock", 0)) exit(EXIT_FAILURE);
-
-        // GPU PyJac memory allocation requirements
-        mechanism_memory *h_mem, *d_mem;
-        h_mem = new mechanism_memory;
-        // h_mem->y = N_VGetDeviceArrayPointer_Cuda(y);
-        // h_mem->jac = SUNMatrix_MagmaDense_Data(J);
-        initialize_gpu_memory(gpu_points, &h_mem, &d_mem);
-
-        userData->h_mem = h_mem;
-        userData->d_mem = d_mem;
+        yptr = N_VGetArrayPointer(y);
 
         for (int j = 0; j < gpu_points; j++) {
             // Index of the global point
@@ -144,8 +141,6 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
             yptr[lIndex] = mesh->temp[gIndex];
             std::memcpy(&yptr[lIndex] + 1, mesh->matSp[gIndex].data(), (NSP - 1) * sizeof(realtype));
         }
-
-        
         
         // Copy initial data to GPU
         N_VCopyToDevice_Cuda(y);
@@ -168,6 +163,11 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
         /* Call CVodeSStolerances */
         retval = CVodeSStolerances(cvode_mem, reltol, abstol);
         if (check_retval(&retval, "CVodeSStolerances", 1)) exit(EXIT_FAILURE);
+
+
+        /* Create SUNMatrix for use in linear solves */
+        J = SUNMatrix_MagmaDenseBlock(gpu_points, NSP, NSP, SUNMEMTYPE_DEVICE, cuda_mem_help, NULL, sunctx);
+        if(check_retval((void *)J, "SUNMatrix_MagmaDenseBlock", 0)) exit(EXIT_FAILURE);
         
 
         /* Create dense SUNLinearSolver (for magma library) */
@@ -177,9 +177,10 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
         /* Attach the matrix and linear solver */
         retval = CVodeSetLinearSolver(cvode_mem, LS, J);
         if (check_retval(&retval, "CVodeSetLinearSolver", 1)) exit(EXIT_FAILURE);
+        std::cout << SUNLinSolGetType(LS) << std::endl;
 
         /* Set the user-supplied Jacobian routine Jac */
-        retval = CVodeSetJacFn(cvode_mem, eval_jacob_cvode);
+        retval = CVodeSetJacFn(cvode_mem, NULL);
         if (check_retval(&retval, "CVodeSetJacFn", 1)) exit(EXIT_FAILURE);
 
         /* Max num steps of the method */

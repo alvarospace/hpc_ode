@@ -28,3 +28,6 @@ add_subdirectory(libpyjacGPU)
 
 # CUDA Integrator
 add_subdirectory(app_magma)
+
+# CUDA Integrator without pyjac library
+add_subdirectory(app_magma_diff_jac)

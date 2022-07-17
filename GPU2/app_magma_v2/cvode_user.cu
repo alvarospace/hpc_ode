@@ -3,6 +3,15 @@
 int eval_jacob_cvode(double t, N_Vector y, N_Vector ydot, SUNMatrix J, void* userData, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
 {
   UserData *uData = (UserData*) userData;
+  realtype *Jptr, *yptr;
+
+  Jptr = SUNMatrix_MagmaDense_Data(J);
+  yptr = N_VGetDeviceArrayPointer(y);
+
+  // uData->h_mem->jac = Jptr;
+  // uData->h_mem->y = yptr;
+
+  // cudaErrorCheck( cudaMemcpy(uData->d_mem, uData->h_mem, sizeof(mechanism_memory), cudaMemcpyHostToDevice) );
   
   // Each GPU thread evaluate 1 jacobian matrix (1 system per thread)
   size_t nBlocks = (int) ceil( ((float) uData->nSystems) / BLOCKSIZE );
@@ -10,7 +19,7 @@ int eval_jacob_cvode(double t, N_Vector y, N_Vector ydot, SUNMatrix J, void* use
   dim3 dimBlock ( BLOCKSIZE );
 
   /* Kernel call */
-  kernel_eval_jacob<<< dimGrid, dimBlock >>>(uData->nSystems, t, uData->Pressure, uData->d_mem->y, uData->d_mem->jac, uData->d_mem);
+  kernel_eval_jacob<<< dimGrid, dimBlock >>>(uData->nSystems, t, uData->Pressure, yptr, Jptr, uData->d_mem);
   
   cudaDeviceSynchronize();
   cudaError_t cudaErr = cudaGetLastError();
@@ -25,6 +34,15 @@ int eval_jacob_cvode(double t, N_Vector y, N_Vector ydot, SUNMatrix J, void* use
 int dydt_cvode(realtype t, N_Vector y, N_Vector ydot, void* userData)
 {
   UserData *uData = (UserData*) userData;
+  realtype *yptr, *ydotptr;
+
+  yptr = N_VGetDeviceArrayPointer(y);
+  ydotptr = N_VGetDeviceArrayPointer(ydot);
+
+  // uData->h_mem->y = yptr;
+  // uData->h_mem->dy = ydotptr;
+
+  // cudaErrorCheck( cudaMemcpy(uData->d_mem, uData->h_mem, sizeof(mechanism_memory), cudaMemcpyHostToDevice) );
 
   // Each GPU thread evaluate 1 dydt system
   size_t nBlocks = (int) ceil( ((float) uData->nSystems) / BLOCKSIZE );
@@ -32,7 +50,7 @@ int dydt_cvode(realtype t, N_Vector y, N_Vector ydot, void* userData)
   dim3 dimBlock ( BLOCKSIZE );
 
   /* Kernel Call */
-  kernel_dydt<<< dimGrid, dimBlock >>>(uData->nSystems, t, uData->Pressure, uData->d_mem->y, uData->d_mem->dy, uData->d_mem);
+  kernel_dydt<<< dimGrid, dimBlock >>>(uData->nSystems, t, uData->Pressure, yptr, ydotptr, uData->d_mem);
   
   cudaDeviceSynchronize();
   cudaError_t cudaErr = cudaGetLastError();
