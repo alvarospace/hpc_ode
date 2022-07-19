@@ -26,6 +26,9 @@ message("SUNDIALS CMAKE PATH: " ${SUNDIALS_DIR})
 # Pyjac CUDA Library
 add_subdirectory(libpyjacGPU)
 
+# Utils Library
+add_subdirectory(libutils)
+
 # CUDA Integrator
 add_subdirectory(app_magma)
 

@@ -2,7 +2,7 @@
 #find_package(OpenMP REQUIRED)
 
 # Target executable
-add_executable(app_magma main.cu utils.cpp utils.hpp cvode_user.cu cvode_user.cuh)
+add_executable(app_magma main.cu cvode_user.cu cvode_user.cuh unittesting.cpp unittesting.hpp)
 
 # Find Sundials
 find_package(SUNDIALS COMPONENTS cvode nveccuda sunlinsolmagmadense REQUIRED)
@@ -15,6 +15,7 @@ set_property(TARGET app_magma PROPERTY CUDA_SEPARABLE_COMPILATION ON)
 # Link libraries
 target_link_libraries(app_magma PRIVATE ${SUNDIALS_TARGETS})
 target_link_libraries(app_magma PRIVATE pyjacGPU)
+target_link_libraries(app_magma PRIVATE utils)
 #target_link_libraries(app_magma PRIVATE OpenMP::OpenMP_CXX) 
 
 # Include headers

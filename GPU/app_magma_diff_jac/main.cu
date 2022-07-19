@@ -2,7 +2,7 @@
 #include <app_magma_diff_jac/cvode_user.cuh>
 
 // UTILS
-#include <app_magma_diff_jac/utils.hpp>
+#include <libutils/utils.hpp>
 
 // Include for memcpy
 #include <cstring>

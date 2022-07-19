@@ -2,10 +2,14 @@
 #include <app_magma/cvode_user.cuh>
 
 // UTILS
-#include <app_magma/utils.hpp>
+#include <libutils/utils.hpp>
 
 // Include for memcpy
 #include <cstring>
+
+// Unittesting
+#include <app_magma/unittesting.hpp>
+
 
 // Max GPU memory allocation by PyJac
 #define MAX_GPU_MEM_PYJAC 0.8
@@ -237,7 +241,7 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
 }
 
 int main(int argc, char *argv[]) {
-    std::string inputFile {"../../../ref_data/res_gri3.0.csv"}; 
+    std::string inputFile {"../../../ref_data/res_gri_32.csv"}; 
     std::string outputFile {"results.csv"};
 
      /* Command-line arguments logic */
