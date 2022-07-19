@@ -8,7 +8,7 @@
 #include <cstring>
 
 // Unittesting
-#include <app_magma/unittesting.hpp>
+#include <app_magma/testing.hpp>
 
 
 // Max GPU memory allocation by PyJac
@@ -145,6 +145,8 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
             yptr[lIndex] = mesh->temp[gIndex];
             std::memcpy(&yptr[lIndex] + 1, mesh->matSp[gIndex].data(), (NSP - 1) * sizeof(realtype));
         }
+
+        Testing::mesh_vs_ysun(mesh, yptr);
         
         // Copy initial data to GPU
         N_VCopyToDevice_Cuda(y);

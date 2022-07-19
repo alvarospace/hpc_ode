@@ -2,7 +2,7 @@
 #find_package(OpenMP REQUIRED)
 
 # Target executable
-add_executable(app_magma main.cu cvode_user.cu cvode_user.cuh unittesting.cpp unittesting.hpp)
+add_executable(app_magma main.cu cvode_user.cu cvode_user.cuh testing.cpp testing.hpp)
 
 # Find Sundials
 find_package(SUNDIALS COMPONENTS cvode nveccuda sunlinsolmagmadense REQUIRED)
