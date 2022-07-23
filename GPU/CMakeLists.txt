@@ -22,6 +22,11 @@ message("SUNDIALS CMAKE PATH: " ${SUNDIALS_DIR})
 
 #set(SUNDIALS_DIR /home/almousa/install/sundials-6.2/lib/cmake/sundials CACHE PATH "Location of SUNDIALSConfig.cmake")
 
+# Add Testing option
+option(USE_TESTING "Enter testing mode" OFF)
+if (USE_TESTING MATCHES ON)
+    add_definitions(-DTESTING)
+endif()
 
 # Pyjac CUDA Library
 add_subdirectory(libpyjacGPU)

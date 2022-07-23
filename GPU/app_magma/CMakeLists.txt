@@ -21,5 +21,6 @@ target_link_libraries(app_magma PRIVATE utils)
 # Include headers
 target_include_directories(app_magma PRIVATE ${CMAKE_SOURCE_DIR})
 target_include_directories(app_magma PRIVATE ${SUNDIALS_INCLUDE_DIRS})
+target_include_directories(app_magma PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
 

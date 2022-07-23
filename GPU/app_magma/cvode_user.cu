@@ -6,7 +6,7 @@ int eval_jacob_cvode(double t, N_Vector y, N_Vector ydot, SUNMatrix J, void* use
   realtype *Jptr, *yptr, *JptrPy, *yptrPy;
 
   Jptr = SUNMatrix_MagmaDense_Data(J);
-  yptr = N_VGetDeviceArrayPointer(y);
+  yptr = N_VGetDeviceArrayPointer_Cuda(y);
 
   /* Length of batched Jacobian matrix (should be = NSP * NSP * gpu_points) */
   // sunindextype JLength = SUNMatrix_MagmaDense_LData(J);
@@ -23,6 +23,10 @@ int eval_jacob_cvode(double t, N_Vector y, N_Vector ydot, SUNMatrix J, void* use
   /* Kernel call */
   kernel_eval_jacob<<< dimGrid, dimBlock >>>(uData->nSystems, t, uData->Pressure, yptr, Jptr, yptrPy, JptrPy, uData->d_mem);
   
+  #ifdef TESTING
+  uData->test_ysun_ypy->ysun_vs_ypyjac();
+  #endif
+
   cudaDeviceSynchronize();
   cudaError_t cudaErr = cudaGetLastError();
   if (cudaErr != cudaSuccess) {
@@ -97,7 +101,7 @@ __device__ void sun_to_pyjac_YJ(double *ySun, double *yPy, double *JSun, double 
   // PyJac index -> #define INDEX(i) (T_ID + (i) * GRID_DIM)
 
   // ySun = {T0, Y00, Y01, ... Y0(NSP-1), T1, Y10, Y11, ... Y1(NSP-1), ...}
-  // yPy  = {T0,  T1,  T2, ...  TNSP, Y00, Y10, Y20, ..., Y(nSystems)0, Y01, Y11, Y21, ..., Y(nSystems)1, ...}
+  // yPy  = {T0,  T1,  T2, ...  T(nSystems), Y00, Y10, Y20, ..., Y(nSystems)0, Y01, Y11, Y21, ..., Y(nSystems)1, ...}
 
   // JSun = {J0, J1, ..., J(nSystems)} Each matrix is ordered column-major
   // JPy  = same structure that yPy, ordered column major
@@ -145,7 +149,7 @@ __device__ void sun_to_pyjac_Y(double *ySun, double *yPy) {
   // PyJac index -> #define INDEX(i) (T_ID + (i) * GRID_DIM)
 
   // ySun = {T0, Y00, Y01, ... Y0(NSP-1), T1, Y10, Y11, ... Y1(NSP-1), ...}
-  // yPy  = {T0,  T1,  T2, ...  TNSP, Y00, Y10, Y20, ..., Y(nSystems)0, Y01, Y11, Y21, ..., Y(nSystems)1, ...}
+  // yPy  = {T0,  T1,  T2, ...  T(nSystems), Y00, Y10, Y20, ..., Y(nSystems)0, Y01, Y11, Y21, ..., Y(nSystems)1, ...}
 
   for (int i = 0; i < NSP; i++) {
     yPy[INDEX(i)] = ySun[threadID * NSP + i];

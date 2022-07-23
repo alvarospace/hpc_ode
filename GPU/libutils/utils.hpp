@@ -52,13 +52,15 @@ namespace Utils
                 header = " " + _header + header + " ";
             }
 
-            void print_message(std::string function, std::string message) {
+            void print_message(std::string function, int line, std::string message) {
                 int len = header.length();
 
                 std::cout << std::endl << num_char('*', 20) << header << num_char('*', 20);
                 std::cout << std::endl << std::endl;
                 std::cout << type + ": ";
-                std::cout << "From \"" + function + "\"" + " -> ";
+                std::cout << "From \"" + function + "\" (line: ";
+                std::cout << line;
+                std::cout << ") -> ";
                 std::cout << message << std::endl;
                 std::cout << std::endl << num_char('*', 40 + len) << std::endl << std::endl;
             }

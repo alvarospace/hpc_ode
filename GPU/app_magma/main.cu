@@ -7,9 +7,11 @@
 // Include for memcpy
 #include <cstring>
 
-// Unittesting
+// Testing
 #include <app_magma/testing.hpp>
 
+// For smart pointers
+#include <memory>
 
 // Max GPU memory allocation by PyJac
 #define MAX_GPU_MEM_PYJAC 0.8
@@ -135,7 +137,27 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
         // Vector allocation and initial conditions
         y = N_VNew_Cuda(nsp_GPU, sunctx);
         if (check_retval((void *)y, "N_VNew_CUDA", 0)) exit(EXIT_FAILURE);
-        yptr = N_VGetArrayPointer(y);
+        yptr = N_VGetHostArrayPointer_Cuda(y);
+
+        #ifdef TESTING
+        /* TESTING "y" array */
+
+        // Pyjac host
+        std::unique_ptr<double> yPyjacHOST(new double[padded]);
+
+        // Sundials GPU
+        double *yptrGPU = N_VGetDeviceArrayPointer_Cuda(y);
+        
+        std::unique_ptr<Testing::YsunYpyjac> test_ysun_ypy(new Testing::YsunYpyjac(
+                        (double*) yptr, yptrGPU, yPyjacHOST.get(), h_mem->y));
+
+        test_ysun_ypy->set_simulation_size(gpu_points, NSP, padded);
+
+        userData->test_ysun_ypy = test_ysun_ypy.get();
+
+        /**********************/
+        #endif
+
 
         for (int j = 0; j < gpu_points; j++) {
             // Index of the global point
@@ -145,8 +167,6 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
             yptr[lIndex] = mesh->temp[gIndex];
             std::memcpy(&yptr[lIndex] + 1, mesh->matSp[gIndex].data(), (NSP - 1) * sizeof(realtype));
         }
-
-        Testing::mesh_vs_ysun(mesh, yptr);
         
         // Copy initial data to GPU
         N_VCopyToDevice_Cuda(y);
@@ -193,10 +213,11 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
         if (check_retval(&retval, "CVodeSetMaxNumSteps", 1)) exit(EXIT_FAILURE);
 
 
-        // Run simulation
+        /****************** Run simulation *********************/
         realtype t0 = 0.0f;
         retval = CVode(cvode_mem, dt, y, &t0, CV_NORMAL);
         N_VCopyFromDevice_Cuda(y);
+        /*******************************************************/
 
         /*
         *   - Calculation of the last element (mass convervation) of every point
@@ -230,6 +251,11 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
         CVodeFree(&cvode_mem);
         SUNLinSolFree(LS);
         SUNMatDestroy(J);
+
+        #ifdef TESTING
+        yPyjacHOST.reset();
+        test_ysun_ypy.reset();
+        #endif
 
         // Calculated points in this iteration
         calculated_points += gpu_points;

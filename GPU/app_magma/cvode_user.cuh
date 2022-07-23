@@ -13,6 +13,9 @@
 #include <libpyjacGPU/mechanism.cuh>
 #include <libpyjacGPU/gpu_macros.cuh>
 
+// TESTING
+#include <app_magma/testing.hpp>
+
 
 // CUDA block size
 #define BLOCKSIZE 32
@@ -24,6 +27,7 @@ struct UserData {
     realtype Pressure;
     mechanism_memory *h_mem;
     mechanism_memory *d_mem;
+    Testing::YsunYpyjac *test_ysun_ypy;
 };
 
 
