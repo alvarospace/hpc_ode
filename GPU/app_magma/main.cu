@@ -13,40 +13,10 @@
 // For smart pointers
 #include <memory>
 
-// Max GPU memory allocation by PyJac
-#define MAX_GPU_MEM_PYJAC 0.8
-
-
-int calc_gpu_points(int total_points, int &real_calculated_points) {
-    size_t mech_size = required_mechanism_size();
-    size_t free_mem = 0;
-    size_t total_mem = 0;
-
-    cudaErrorCheck( cudaMemGetInfo(&free_mem, &total_mem) );
-
-    int max_allocated_points = int(floor( MAX_GPU_MEM_PYJAC * ((double)free_mem / (double)mech_size) ));
-
-    // Choose between the remaining points and the maximum allocatable 
-    real_calculated_points = min(total_points, max_allocated_points);
-
-    // Transform padded in a number multiple of BLOCKSIZE, ej: 1000 -> 1024
-    int padded = int(ceil(real_calculated_points / float(BLOCKSIZE)) * BLOCKSIZE);
-
-    if (padded == 0) {
-        std::cout << "Mechanism is too large, cannot allocate any point... exiting program." << std::endl;
-        exit(EXIT_FAILURE);
-    }
-
-    std::cout << "Initializing PyJac GPU memory..." << std::endl;
-    std::cout << "GPU allocated points in this iteration: " << padded << std::endl;
-    return padded;
-}
-
 
 void cvode_run(const std::string& inputFile, const std::string& outputFile) {
 
     /********** INPUT CONSTANTS ************/
-
     // Pressure Constant (Pa)
     realtype P = 101325.15;
 
@@ -56,12 +26,7 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
     // Tolorences 
     realtype reltol = RCONST(1.0e-6);
     realtype abstol = RCONST(1.0e-10);
-    
-
     /****************************/
-
-    // TIMERS
-    Utils::Timer simTime;
 
     /*********** READ CSV FILE and SET PACKAGE SIZE ************/
     std::shared_ptr<Utils::ThermData> mesh = Utils::readCsv(inputFile);
@@ -69,7 +34,6 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
     
     // Number of points of the mesh
     size_t n_size = mesh->points;
-
     /************************************************************/
 
     // Check that number of species read is the same that in pyjac library
@@ -84,12 +48,11 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
     // Variables declarations
     int m_maxsteps = 10000;
 
-    // // Problem size has to be "sunindextype", NSP * nBatch
+    // Problem size has to be "sunindextype", NSP * nBatch
     sunindextype nsp_GPU;
 
     /* Sundials context creation and automatic free memory (C++ feature) */
     sundials::Context sunctx;
-
 
     /* Cvode mem */
     void* cvode_mem = NULL;
@@ -103,10 +66,11 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
     realtype *yptr;
     SUNMatrix J;
     SUNLinearSolver LS;
-
     int retval;
     /*************/
 
+    // TIMER
+    Utils::Timer simTime;
     simTime.tic();
 
     size_t calculated_points = 0;
@@ -117,16 +81,18 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
         /* Start initialization rutine for GPU */
 
         // GPU PyJac memory allocation requirements
-        mechanism_memory *h_mem, *d_mem;
-        h_mem = new mechanism_memory;
-        initialize_gpu_memory(padded, &h_mem, &d_mem);
+        mechanism_memory *pyjac_mem;
+        //mechanism_memory *d_mem;
+        pyjac_mem = new mechanism_memory;
+        //initialize_gpu_memory(padded, &pyjac_mem, &d_mem);
+        init_memory_gpu(padded, pyjac_mem);
         
 
         // CVode User defined data to access in user supplied functions
         UserData *userData = new UserData;
         userData->Pressure = P;
-        userData->h_mem = h_mem;
-        userData->d_mem = d_mem;
+        userData->pyjac_mem = pyjac_mem;
+        //userData->d_mem = d_mem;
 
 
         // Problem size for GPU
@@ -140,21 +106,20 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
         yptr = N_VGetHostArrayPointer_Cuda(y);
 
         #ifdef TESTING
-        /* TESTING "y" array */
-
+        /* TESTING "y" and "dy" array */
         // Pyjac host
-        std::unique_ptr<double> yPyjacHOST(new double[padded]);
+        std::unique_ptr<double> yPyjacHOST(new double[padded * NSP]);
+        std::unique_ptr<double> dyPyjacHOST(new double[padded * NSP]);
 
         // Sundials GPU
         double *yptrGPU = N_VGetDeviceArrayPointer_Cuda(y);
         
         std::unique_ptr<Testing::YsunYpyjac> test_ysun_ypy(new Testing::YsunYpyjac(
-                        (double*) yptr, yptrGPU, yPyjacHOST.get(), h_mem->y));
+                        (double*) yptr, yptrGPU, yPyjacHOST.get(), pyjac_mem->y,
+                        dyPyjacHOST.get(), pyjac_mem->dy));
 
         test_ysun_ypy->set_simulation_size(gpu_points, NSP, padded);
-
         userData->test_ysun_ypy = test_ysun_ypy.get();
-
         /**********************/
         #endif
 
@@ -243,19 +208,15 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
 
 
         /* Free Memory */
-        free_gpu_memory(&h_mem, &d_mem);
-        delete(h_mem);
+        //free_gpu_memory(&pyjac_mem, &d_mem);
+        free_memory_gpu(pyjac_mem);
+        delete(pyjac_mem);
         delete(userData);
 
         N_VDestroy(y);
         CVodeFree(&cvode_mem);
         SUNLinSolFree(LS);
         SUNMatDestroy(J);
-
-        #ifdef TESTING
-        yPyjacHOST.reset();
-        test_ysun_ypy.reset();
-        #endif
 
         // Calculated points in this iteration
         calculated_points += gpu_points;
