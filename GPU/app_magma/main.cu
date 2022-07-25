@@ -114,12 +114,13 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
         // Sundials GPU
         double *yptrGPU = N_VGetDeviceArrayPointer_Cuda(y);
         
-        std::unique_ptr<Testing::YsunYpyjac> test_ysun_ypy(new Testing::YsunYpyjac(
+        std::unique_ptr<Testing::YsunYpyjac> test_y_sun_vs_py(new Testing::YsunYpyjac(
                         (double*) yptr, yptrGPU, yPyjacHOST.get(), pyjac_mem->y,
                         dyPyjacHOST.get(), pyjac_mem->dy));
 
-        test_ysun_ypy->set_simulation_size(gpu_points, NSP, padded);
-        userData->test_ysun_ypy = test_ysun_ypy.get();
+        test_y_sun_vs_py->set_simulation_size(gpu_points, NSP, padded);
+        test_y_sun_vs_py->set_logger_level("error");
+        userData->test_y_sun_vs_py = test_y_sun_vs_py.get();
         /**********************/
         #endif
 

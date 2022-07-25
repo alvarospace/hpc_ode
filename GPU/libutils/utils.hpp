@@ -14,6 +14,7 @@
 //#include <omp.h>
 #include <vector>
 #include <memory>
+#include <algorithm>
 
 namespace Utils
 {   
@@ -47,29 +48,47 @@ namespace Utils
     */
     class Logger {
         public:
-            Logger(std::string _header, std::string _type) {
-                type = _type;
+            Logger(std::string _header) {
                 header = " " + _header + header + " ";
             }
 
-            void print_message(std::string function, int line, std::string message) {
-                int len = header.length();
+            enum logLevels { ERROR, INFO };
 
-                std::cout << std::endl << num_char('*', 20) << header << num_char('*', 20);
-                std::cout << std::endl << std::endl;
-                std::cout << type + ": ";
-                std::cout << "From \"" + function + "\" (line: ";
-                std::cout << line;
-                std::cout << ") -> ";
-                std::cout << message << std::endl;
-                std::cout << std::endl << num_char('*', 40 + len) << std::endl << std::endl;
+            void set_logger_level(std::string _level) {
+                logLevels enum_level = convert_to_log_level(_level);
+                switch (enum_level)
+                {
+                    case INFO:
+                        logLevel = INFO;
+                        break;
+                    
+                    case ERROR:
+                        logLevel = ERROR;
+                        break;
+                }
             }
 
-            
+            void print_message(std::string function, int line, std::string message, std::string log_type) {
+                logLevels curr_log_type = convert_to_log_level(log_type);
+                if (curr_log_type <= logLevel) {
+                    std::string type = convert_log_level_to_string(curr_log_type);
+                    int len = header.length();
+
+                    std::cout << std::endl << num_char('*', 20) << header << num_char('*', 20);
+                    std::cout << std::endl << std::endl;
+                    std::cout << type + ": ";
+                    std::cout << "From \"" + function + "\" (line: ";
+                    std::cout << line;
+                    std::cout << ") -> ";
+                    std::cout << message << std::endl;
+                    std::cout << std::endl << num_char('*', 40 + len) << std::endl << std::endl;
+                }
+            }
+
 
         private:
-            std::string type{""};
             std::string header{" logger"};
+            logLevels logLevel = INFO;
 
             std::string num_char(char character, int times) {
                 std::string chain{""};
@@ -77,6 +96,30 @@ namespace Utils
                     chain.push_back(character);
                 }
                 return chain;
+            }
+
+            logLevels convert_to_log_level(std::string str_level) {
+                // String to lowercase
+                std::for_each(str_level.begin(), str_level.end(), [](char &c) {
+                    c = std::tolower(c);
+                });
+                
+                logLevels result;
+                if (str_level == "info")
+                    result = INFO;
+                if (str_level == "error")
+                    result = ERROR;
+
+                return result;
+            }
+
+            std::string convert_log_level_to_string(logLevels level) {
+                std::string result;
+                if (level == INFO)
+                    result = "INFO";
+                if (level == ERROR)
+                    result = "ERROR";
+                return result;
             }
     };
 
