@@ -181,7 +181,7 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
                         JacSunHost.get(), JacSunGPU, JacPyjacHOST.get(), pyjac_mem->jac));
 
         test_y_sun_vs_py->set_simulation_size(gpu_points, NSP, padded);
-        test_y_sun_vs_py->set_logger_level("info");
+        test_y_sun_vs_py->set_logger_level("error");
 
         test_jacobian->set_simulation_size(gpu_points, NSP, padded);
         test_jacobian->set_logger_level("info");

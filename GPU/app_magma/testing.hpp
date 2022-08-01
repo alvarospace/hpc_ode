@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include <vector>
 
 #include <cuda.h>
 #include <cuda_runtime.h>

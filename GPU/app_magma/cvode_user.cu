@@ -61,9 +61,8 @@ int dydt_cvode(realtype t, N_Vector y, N_Vector ydot, void* userData)
   cudaDeviceSynchronize();
 
   #ifdef TESTING
-  uData->test_y_sun_vs_py->set_logger_level("error");
-  uData->test_y_sun_vs_py->ysun_vs_ypyjac();
-  uData->test_y_sun_vs_py->ysun_vs_dypyjac();
+  //uData->test_y_sun_vs_py->ysun_vs_ypyjac();
+  //uData->test_y_sun_vs_py->ysun_vs_dypyjac();
   #endif
 
   cudaError_t cudaErr = cudaGetLastError();
@@ -121,16 +120,14 @@ __device__ void sun_to_pyjac_YJ(double *ySun, double *yPy, double *JSun, double 
   // JSun = {J0, J1, ..., J(nSystems)} Each matrix is ordered column-major
   // JPy  = same structure that yPy, ordered column major
 
+  // Location of the first system element for the current thread for "y" vector
+  int sunSystemY = threadID * NSP;
+
+  // Location of the first element of the system Jacobian matrix
+  int sunSystemJac = threadID * NSP * NSP;
+
   for (int j = 0; j < NSP; j++) {
-    // Location of the first system element for the current thread for "y" vector
-    int sunSystemY = threadID * NSP;
-
     yPy[INDEX(j)] = ySun[sunSystemY + j];
-
-
-    // Location of the first element of the system Jacobian matrix
-    int sunSystemJac = threadID * NSP * NSP;
-
     for (int i = 0; i < NSP; i++) {
       JPy[INDEX(j*NSP + i)] =  JSun[sunSystemJac + j*NSP + i];
     }
@@ -141,15 +138,14 @@ __device__ void pyjac_to_sun_YJ(double *yPy, double *ySun, double *JPy, double *
 
   int threadID = threadIdx.x + blockIdx.x * blockDim.x;
 
-    for (int j = 0; j < NSP; j++) {
-    // Location of the first system element for the current thread for "y" vector
-    int sunSystemY = threadID * NSP;
+  // Location of the first system element for the current thread for "y" vector
+  int sunSystemY = threadID * NSP;
 
+  // Location of the first element of the system Jacobian matrix
+  int sunSystemJac = threadID * NSP * NSP;
+
+  for (int j = 0; j < NSP; j++) {
     ySun[sunSystemY + j] = yPy[INDEX(j)];
-
-    // Location of the first element of the system Jacobian matrix
-    int sunSystemJac = threadID * NSP * NSP;
-
     for (int i = 0; i < NSP; i++) {
       JSun[sunSystemJac + j*NSP + i] = JPy[INDEX(j * NSP + i)];
     }

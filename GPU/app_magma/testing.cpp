@@ -167,27 +167,54 @@ namespace Testing
         }
 
         /* Sum each matrix and compare the size */
-
+        /* Compare by chunks (individual matrices of 53x53 size) */
         // Sundials
-        double total_array1{0.0f};
-        for (int i = 0; i < systems * nsp * nsp; i++) {
-            total_array1 += JacSunHost[i];
+        vector<double> individual_matrix_sum1(systems, 0.0f);
+        double total_matrix1(0.0f);
+        for (int i = 0; i < systems; i++) {
+            for (int j = 0; j < nsp * nsp; j++) {
+                individual_matrix_sum1[i] += JacSunHost[i * nsp * nsp + j];
+            }
+            total_matrix1 += individual_matrix_sum1[i];
         }
-        sprintf(buffer_message, "Total sum of JacSunHost matrix = %E", total_array1);
-        logger->print_message(__func__, __LINE__, buffer_message, info_type);
 
         // Pyjac
         // yPy  = {T0,  T1,  T2, ...  T(nSystems), Y00, Y10, Y20, ..., Y(nSystems)0, Y01, Y11, Y21, ..., Y(nSystems)1, ...}
-        double total_array2{0.0f};
-        for (int i = 0; i < nsp*nsp; i++) {
-            for (int j = 0; j < systems ; j++) {
-                total_array2 += JacPyjacHost[i * padded + j];
+        vector<double> individual_matrix_sum2(systems, 0.0f);
+        double total_matrix2(0.0f);
+        for (int j = 0; j < systems ; j++) {
+            for (int i = 0; i < nsp*nsp; i++) {
+                individual_matrix_sum2[j] += JacPyjacHost[i * padded + j];
+                
+            }
+            total_matrix2 += individual_matrix_sum2[j];
+        }
+
+        for (int i = 0; i < systems; i++) {
+            sprintf(buffer_message, "Sum of matrix number %d of JacSunHost = %E", i, individual_matrix_sum1[i]);
+            logger->print_message(__func__, __LINE__, buffer_message, info_type);
+
+            sprintf(buffer_message, "Sum of matrix number %d of JacPyjacHost = %E", i, individual_matrix_sum2[i]);
+            logger->print_message(__func__, __LINE__, buffer_message, info_type);
+
+            double individual_error = abs(individual_matrix_sum1[i] - individual_matrix_sum2[i]);
+            sprintf(buffer_message, "Difference between JacSunHost and JacPyjacHost matrix number %d = %E", i, individual_error);
+            logger->print_message(__func__, __LINE__, buffer_message, info_type);
+
+            if (individual_error > 0.0) {
+                sprintf(buffer_message, "The sum of the jacobian matrix number %d (JacSunHost and JacPyjacHost) is different, this is the result of subtraction: %E", i, individual_error);
+                logger->print_message(__func__, __LINE__, buffer_message, error_type);
             }
         }
-        sprintf(buffer_message, "Total sum of JacPyjacHost matrix = %E", total_array2);
+
+
+        sprintf(buffer_message, "Total sum of JacSunHost matrix = %E", total_matrix1);
         logger->print_message(__func__, __LINE__, buffer_message, info_type);
 
-        double error = abs(total_array1 - total_array2);
+        sprintf(buffer_message, "Total sum of JacPyjacHost matrix = %E", total_matrix2);
+        logger->print_message(__func__, __LINE__, buffer_message, info_type);
+
+        double error = abs(total_matrix1 - total_matrix2);
 
         sprintf(buffer_message, "Difference between JacSunHost and JacPyjacHost = %E", error);
         logger->print_message(__func__, __LINE__, buffer_message, info_type);
