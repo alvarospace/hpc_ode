@@ -4,13 +4,14 @@ using namespace std;
 
 namespace Testing
 {
+    /************************* YsunYpyjac ***************************/
     /* PUBLIC */
 
     // Constructor
     YsunYpyjac::YsunYpyjac(double *_ySunHost, double *_ySunGPU, double *_yPyjacHost, double *_yPyjacGPU, double *_dyPyjacHost, double *_dyPyjacGPU) \
-        : ySunHost{_ySunHost}, ySunGPU{_ySunGPU}, yPyjacHost{_yPyjacHost}, yPyjacGPU{_yPyjacGPU}, dyPyjacHost{_dyPyjacHost}, dyPyjacGPU{_dyPyjacGPU} {
+        : ySunHost(_ySunHost), ySunGPU(_ySunGPU), yPyjacHost(_yPyjacHost), yPyjacGPU(_yPyjacGPU), dyPyjacHost(_dyPyjacHost), dyPyjacGPU(_dyPyjacGPU) {
 
-        logger = make_unique<Utils::Logger>("Testing");
+        logger = make_unique<Utils::Logger>("Y array");
 
         // Dictionary of pointers
         pointer_dict["ySunHost"]     = ySunHost;
@@ -65,7 +66,7 @@ namespace Testing
         }
 
         // Buffer to messages
-        char buffer_message [100];
+        char buffer_message [200];
         
         /* Move data from GPU to CPU */
         cudaError_t cuda_err;
@@ -112,6 +113,87 @@ namespace Testing
 
         if (error > 0.0) {
             sprintf(buffer_message, "The sum of each array (%s and %s) is different, this is the result of subtraction: %E", array1Host.c_str(), array2Host.c_str(), error);
+            logger->print_message(__func__, __LINE__, buffer_message, error_type);
+        }
+    }
+
+    /**********************************************************************/
+
+    /************************* JacSunJacPyjac ***************************/
+    /* PUBLIC */
+
+    // Constructor
+    JacSunJacPyjac::JacSunJacPyjac(double *_JacSunHost, double *_JacSunGPU, double *_JacPyjacHost, double *_JacPyjacGPU) \
+        : JacSunHost(_JacSunHost), JacSunGPU(_JacSunGPU), JacPyjacHost(_JacPyjacHost), JacPyjacGPU(_JacPyjacGPU) {
+
+        logger = make_unique<Utils::Logger>("Jac matrix");
+    }
+
+
+    void JacSunJacPyjac::set_simulation_size(int num_systems, int num_species, int _padded) {
+        systems = num_systems;
+        nsp = num_species;
+
+        // Padded is the number of systems used by pyjac
+        padded = _padded;
+
+        total_bytes_sun = systems * nsp * nsp * sizeof(double);
+        total_bytes_py = padded * nsp * nsp * sizeof(double);
+    }
+
+    /* Level can be "error" or "info" */
+    void JacSunJacPyjac::set_logger_level(string level) {
+        logger->set_logger_level(level);
+    }
+
+    void JacSunJacPyjac::compare_matrices() {
+        // Buffer to messages
+        char buffer_message [200];
+        
+        /* Move data from GPU to CPU */
+        cudaError_t cuda_err;
+        cuda_err = cudaMemcpy(JacSunHost, JacSunGPU, total_bytes_sun, cudaMemcpyDeviceToHost);
+        if (cuda_err != cudaSuccess)
+        {
+            sprintf(buffer_message, "cudaMemcpy JacSunHost <- JacSunGPU returned error code %d, line(%d)\n", cuda_err, __LINE__);
+            logger->print_message(__func__, __LINE__, buffer_message, error_type);
+        }
+
+        cuda_err = cudaMemcpy(JacPyjacHost, JacPyjacGPU, total_bytes_py, cudaMemcpyDeviceToHost);
+        if (cuda_err != cudaSuccess)
+        {
+            sprintf(buffer_message, "cudaMemcpy JacPyjacHost <- JacPyjacGPU returned error code %d, line(%d)\n", cuda_err, __LINE__);
+            logger->print_message(__func__, __LINE__, buffer_message, error_type);
+        }
+
+        /* Sum each matrix and compare the size */
+
+        // Sundials
+        double total_array1{0.0f};
+        for (int i = 0; i < systems * nsp * nsp; i++) {
+            total_array1 += JacSunHost[i];
+        }
+        sprintf(buffer_message, "Total sum of JacSunHost matrix = %E", total_array1);
+        logger->print_message(__func__, __LINE__, buffer_message, info_type);
+
+        // Pyjac
+        // yPy  = {T0,  T1,  T2, ...  T(nSystems), Y00, Y10, Y20, ..., Y(nSystems)0, Y01, Y11, Y21, ..., Y(nSystems)1, ...}
+        double total_array2{0.0f};
+        for (int i = 0; i < nsp*nsp; i++) {
+            for (int j = 0; j < systems ; j++) {
+                total_array2 += JacPyjacHost[i * padded + j];
+            }
+        }
+        sprintf(buffer_message, "Total sum of JacPyjacHost matrix = %E", total_array2);
+        logger->print_message(__func__, __LINE__, buffer_message, info_type);
+
+        double error = abs(total_array1 - total_array2);
+
+        sprintf(buffer_message, "Difference between JacSunHost and JacPyjacHost = %E", error);
+        logger->print_message(__func__, __LINE__, buffer_message, info_type);
+
+        if (error > 0.0) {
+            sprintf(buffer_message, "The sum of each matrix (JacSunHost and JacPyjacHost) is different, this is the result of subtraction: %E", error);
             logger->print_message(__func__, __LINE__, buffer_message, error_type);
         }
     }

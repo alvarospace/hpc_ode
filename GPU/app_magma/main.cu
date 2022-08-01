@@ -105,26 +105,6 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
         if (check_retval((void *)y, "N_VNew_CUDA", 0)) exit(EXIT_FAILURE);
         yptr = N_VGetHostArrayPointer_Cuda(y);
 
-        #ifdef TESTING
-        /* TESTING "y" and "dy" array */
-        // Pyjac host
-        std::unique_ptr<double> yPyjacHOST(new double[padded * NSP]);
-        std::unique_ptr<double> dyPyjacHOST(new double[padded * NSP]);
-
-        // Sundials GPU
-        double *yptrGPU = N_VGetDeviceArrayPointer_Cuda(y);
-        
-        std::unique_ptr<Testing::YsunYpyjac> test_y_sun_vs_py(new Testing::YsunYpyjac(
-                        (double*) yptr, yptrGPU, yPyjacHOST.get(), pyjac_mem->y,
-                        dyPyjacHOST.get(), pyjac_mem->dy));
-
-        test_y_sun_vs_py->set_simulation_size(gpu_points, NSP, padded);
-        test_y_sun_vs_py->set_logger_level("error");
-        userData->test_y_sun_vs_py = test_y_sun_vs_py.get();
-        /**********************/
-        #endif
-
-
         for (int j = 0; j < gpu_points; j++) {
             // Index of the global point
             size_t gIndex = calculated_points + j;
@@ -178,6 +158,37 @@ void cvode_run(const std::string& inputFile, const std::string& outputFile) {
         retval = CVodeSetMaxNumSteps(cvode_mem, m_maxsteps);
         if (check_retval(&retval, "CVodeSetMaxNumSteps", 1)) exit(EXIT_FAILURE);
 
+        #ifdef TESTING
+        /* TESTING "y", "dy" and Jacobian arrays */
+        // Pyjac host
+        std::unique_ptr<double> yPyjacHOST(new double[padded * NSP]);
+        std::unique_ptr<double> dyPyjacHOST(new double[padded * NSP]);
+        std::unique_ptr<double> JacPyjacHOST(new double[padded * NSP * NSP]);
+
+        // Sundials GPU
+        double *yptrGPU = N_VGetDeviceArrayPointer_Cuda(y);
+        double *JacSunGPU = SUNMatrix_MagmaDense_Data(J);
+
+        // Sundials HOST
+        std::unique_ptr<double> JacSunHost(new double[gpu_points * NSP * NSP]);
+        
+        // Debugger objects
+        std::unique_ptr<Testing::YsunYpyjac> test_y_sun_vs_py(new Testing::YsunYpyjac(
+                        (double*) yptr, yptrGPU, yPyjacHOST.get(), pyjac_mem->y,
+                        dyPyjacHOST.get(), pyjac_mem->dy));
+
+        std::unique_ptr<Testing::JacSunJacPyjac> test_jacobian(new Testing::JacSunJacPyjac(
+                        JacSunHost.get(), JacSunGPU, JacPyjacHOST.get(), pyjac_mem->jac));
+
+        test_y_sun_vs_py->set_simulation_size(gpu_points, NSP, padded);
+        test_y_sun_vs_py->set_logger_level("info");
+
+        test_jacobian->set_simulation_size(gpu_points, NSP, padded);
+        test_jacobian->set_logger_level("info");
+        userData->test_y_sun_vs_py = test_y_sun_vs_py.get();
+        userData->test_jacobian = test_jacobian.get();
+        /**********************/
+        #endif
 
         /****************** Run simulation *********************/
         realtype t0 = 0.0f;

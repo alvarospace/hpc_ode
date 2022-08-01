@@ -24,10 +24,9 @@ int eval_jacob_cvode(double t, N_Vector y, N_Vector ydot, SUNMatrix J, void* use
   /* Kernel call */
   kernel_eval_jacob<<< dimGrid, dimBlock >>>(uData->nSystems, t, uData->Pressure, yptr, Jptr, yptrPy, JptrPy, pyjac_mem);
   
-  // #ifdef TESTING
-  // uData->test_y_sun_vs_py->set_logger_level("info");
-  // uData->test_y_sun_vs_py->ysun_vs_dypyjac();
-  // #endif
+  #ifdef TESTING
+  uData->test_jacobian->compare_matrices();
+  #endif
 
   cudaDeviceSynchronize();
   cudaError_t cudaErr = cudaGetLastError();
@@ -62,7 +61,8 @@ int dydt_cvode(realtype t, N_Vector y, N_Vector ydot, void* userData)
   cudaDeviceSynchronize();
 
   #ifdef TESTING
-  uData->test_y_sun_vs_py->set_logger_level("info");
+  uData->test_y_sun_vs_py->set_logger_level("error");
+  uData->test_y_sun_vs_py->ysun_vs_ypyjac();
   uData->test_y_sun_vs_py->ysun_vs_dypyjac();
   #endif
 

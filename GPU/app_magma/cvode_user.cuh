@@ -31,6 +31,7 @@ struct UserData {
     mechanism_memory *pyjac_mem;
     mechanism_memory *d_mem;
     Testing::YsunYpyjac *test_y_sun_vs_py;
+    Testing::JacSunJacPyjac *test_jacobian;
 };
 
 
