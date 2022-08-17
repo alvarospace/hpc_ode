@@ -1,0 +1,66 @@
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+
+
+.dropbox
+*.ini
+*.obj
+Hochbruck/
+derivations/
+validation/
+performance/
+StiffnessPrediction/
+*.pyc
+
+#auto-populated files/folders
+generic/solver_options.*
+accelerInt.conf
+release/
+debug/
+.sconsign.dblite
+
+#this is populated by pyJac, hence we don't want to commit anything
+mechanism/
+
+#ignore SConscripts in examples
+examples/*/Sconscript
+
+#ignore pyJac example output
+examples/pyJac/out/
+
+#ignore solvers
+cvodes-int
+rk78-int
+radau-int*
+exprb43-int*
+exp4-int*
