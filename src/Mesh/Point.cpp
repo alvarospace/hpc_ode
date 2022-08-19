@@ -22,7 +22,7 @@ bool Point::hasSpecies() {
 }
 
 bool Point::hasCoordinates() {
-    return flagEnthapy;
+    return flagCoordinates;
 }
 
 double Point::getTemperature() {

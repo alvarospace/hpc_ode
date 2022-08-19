@@ -1,17 +1,23 @@
 #include "Point.hpp"
+#include "PointBuilder.hpp"
 #include <iostream>
 
 using namespace std;
 
-void testFullBuild() {
-    int const nsp {3};
-    double const temperature {100};
-    double const enthalpy {-10000};
-    Coords const coordinates {1,2,3};
+// Dummy values for testing
+int const nsp {3};
+double const temperature {100};
+double const enthalpy {-10000};
+Coords const coordinates {1,2,3};
+vector<double> species {0.2, 0.2, 0.6};
 
-    cout << "x: " << coordinates.x << endl;
-    cout << "y: " << coordinates.y << endl;
-    cout << "z: " << coordinates.z << endl;
+void testFullBuild() {
+    
+    Point point = Point::create(nsp)
+                            .addTemperature(temperature)
+                            .addEnthalpy(enthalpy)
+                            .addCoordinates(coordinates)
+                            .addSpecies(species);
 }
 
 

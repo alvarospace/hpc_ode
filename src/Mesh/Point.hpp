@@ -1,6 +1,5 @@
 #pragma once
 
-#include "PointBuilder.hpp"
 #include <vector>
 
 using std::vector;
@@ -8,6 +7,9 @@ using std::vector;
 struct Coords {
     double x,y,z;
 };
+
+// Forward declaration to avoid import conflicts
+class PointBuilder;
 
 // Implements builder pattern
 class Point {

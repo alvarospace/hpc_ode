@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Point.hpp"
 #include <vector>
+#include "Point.hpp"
 
 using std::vector;
 
