@@ -9,7 +9,7 @@
 
 #include <stdlib.h>
 #include "gpu_macros.cuh"
-#include "gou_memory.cuh"
+#include "gpu_memory.cuh"
 
 #ifdef GENERATE_DOCS
 //put this in the van der Pol namespace for documentation
