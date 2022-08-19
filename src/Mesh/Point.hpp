@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SystemBuilder.h"
+#include "PointBuilder.hpp"
 #include <vector>
 
 using std::vector;
@@ -10,12 +10,12 @@ struct Coords {
 };
 
 // Implements builder pattern
-class System {
+class Point {
     public:
-        System(int _nsp) : nsp(_nsp) {}
+        Point(int _nsp) : nsp(_nsp) {}
 
-        friend class SystemBuilder;
-        static SystemBuilder create(int _nsp);
+        friend class PointBuilder;
+        static PointBuilder create(int _nsp);
 
         bool hasTemperature();
         bool hasEnthalpy();

@@ -1,5 +1,5 @@
 #pragma once
-#include "System.h"
+#include "Point.hpp"
 #include <vector>
 
 using std::vector;
@@ -13,7 +13,7 @@ class Mesh {
         vector<vector<double>>& getSpeciesMatrix();
         vector<Coords>& getCoordinatesVector();
 
-        void addSystem();
+        void addPoint();
         int size() const;
         bool hasCoords() const;
     
@@ -23,7 +23,7 @@ class Mesh {
         vector<vector<double>> speciesMatrix;
         vector<Coords> coordinates;
 
-        int systems;
+        int Points;
         int nsp;
         bool coordFlag;
 };

@@ -1,37 +1,38 @@
-#include "SystemBuilder.h"
+#include "PointBuilder.hpp"
+#include "Point.hpp"
 #include <stdexcept>
 #include <vector>
 #include <algorithm>
 #include <numeric>
 
-SystemBuilder& SystemBuilder::addTemperature(double temperature) {
-    if (system.hasTemperature()) {
+PointBuilder& PointBuilder::addTemperature(double temperature) {
+    if (point.hasTemperature()) {
         throw std::logic_error("Temperature already set in the build process");
     }
     if (temperature < 0) {
         throw std::runtime_error("Temperature cannot be negative");
     }
-    system.temperature = temperature;
-    system.flagTemperature = true;
+    point.temperature = temperature;
+    point.flagTemperature = true;
     return *this;
 }
 
-SystemBuilder& SystemBuilder::addEnthalpy(double enthalpy) {
-    if (system.hasEnthalpy()) {
+PointBuilder& PointBuilder::addEnthalpy(double enthalpy) {
+    if (point.hasEnthalpy()) {
         throw std::logic_error("Enthalpy already set in the build process");
     }
-    system.enthalpy = enthalpy;
-    system.flagEnthapy = true;
+    point.enthalpy = enthalpy;
+    point.flagEnthapy = true;
     return *this;
 }
 
-SystemBuilder& SystemBuilder::addSpecies(vector<double> species) {
-    if (system.hasSpecies()) {
+PointBuilder& PointBuilder::addSpecies(vector<double> species) {
+    if (point.hasSpecies()) {
         throw std::logic_error("Species vector already set in the build process");
     }
-    if (species.size() != system.nsp) {
+    if (species.size() != point.nsp) {
         throw std::runtime_error("Vector size does not match the "
-                "number of the species of the system");
+                "number of the species of the Point");
     }
 
     bool all_less_equal_1 = std::all_of(std::begin(species), std::end(species), [] (double sp) {
@@ -46,16 +47,16 @@ SystemBuilder& SystemBuilder::addSpecies(vector<double> species) {
         throw std::runtime_error("Species vector breaks mass conservation law");
     }
 
-    system.species = species;
-    system.flagSpecies = true;
+    point.species = species;
+    point.flagSpecies = true;
     return *this;
 }
 
-SystemBuilder& SystemBuilder::addCoordinates(Coords coordinates) {
-    if (system.hasCoordinates()) {
+PointBuilder& PointBuilder::addCoordinates(Coords coordinates) {
+    if (point.hasCoordinates()) {
         throw std::logic_error("Coordinates already set in the build process");
     }
-    system.coordinates = coordinates;
-    system.flagCoordinates = true;
+    point.coordinates = coordinates;
+    point.flagCoordinates = true;
     return *this;
 }
