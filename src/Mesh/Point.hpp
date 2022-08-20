@@ -14,22 +14,24 @@ class PointBuilder;
 // Implements builder pattern
 class Point {
     public:
-        Point(int _nsp) : nsp(_nsp) {}
-
         friend class PointBuilder;
         static PointBuilder create(int _nsp);
 
-        bool hasTemperature();
-        bool hasEnthalpy();
-        bool hasSpecies();
-        bool hasCoordinates();
+        bool hasTemperature() const;
+        bool hasEnthalpy() const;
+        bool hasSpecies() const;
+        bool hasCoordinates() const;
+        bool isReady() const;
 
-        double getTemperature();
-        double getEnthalpy();
-        vector<double> getSpecies();
-        Coords getCoordinates();
+        double getTemperature() const;
+        double getEnthalpy() const;
+        vector<double> getSpecies() const;
+        Coords getCoordinates() const;
 
     private:
+        // Private constructor to force PointBuilder functionality
+        Point(int _nsp) : nsp(_nsp) {}
+
         double temperature;
         double enthalpy;
         vector<double> species;

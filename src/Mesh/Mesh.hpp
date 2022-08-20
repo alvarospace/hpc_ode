@@ -13,17 +13,20 @@ class Mesh {
         vector<vector<double>>& getSpeciesMatrix();
         vector<Coords>& getCoordinatesVector();
 
-        void addPoint();
+        void addPoint(Point const& newPoint);
         int size() const;
-        bool hasCoords() const;
+        bool hasEnthalpy() const;
+        bool hasCoordinates() const;
     
     private:
+        bool isCompatible(Point const& point) const;
+
         vector<double> temperature;
         vector<double> enthalpy;
         vector<vector<double>> speciesMatrix;
         vector<Coords> coordinates;
 
-        int Points;
         int nsp;
-        bool coordFlag;
+        bool enthalpyFlag {false};
+        bool coordFlag {false};
 };
