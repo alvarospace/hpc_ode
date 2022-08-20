@@ -4,9 +4,12 @@
 
 using std::vector;
 
-// Has to be a Singleton
+// Singleton class to keep the application data
 class Mesh {
     public:
+        // Static method with static instace of Mesh
+        static Mesh& get();
+
         vector<double>& getTemperatureVector();
         vector<double>& getEnthalpyVector();
         vector<double>& getSpeciesVector(int index);
@@ -14,11 +17,19 @@ class Mesh {
         vector<Coords>& getCoordinatesVector();
 
         void addPoint(Point const& newPoint);
-        int size() const;
+        int totalSize() const;
+        int numSpecies() const;
         bool hasEnthalpy() const;
         bool hasCoordinates() const;
+        void clear();
+
+        // Remove copy constructor and assignment operator
+        Mesh(Mesh const&) = delete;
+        Mesh& operator=(Mesh const&) = delete;
     
     private:
+        // Singleton constructor is private
+        Mesh() {}
         bool isCompatible(Point const& point) const;
 
         vector<double> temperature;
@@ -26,7 +37,7 @@ class Mesh {
         vector<vector<double>> speciesMatrix;
         vector<Coords> coordinates;
 
-        int nsp;
+        int nsp {0};
         bool enthalpyFlag {false};
         bool coordFlag {false};
 };

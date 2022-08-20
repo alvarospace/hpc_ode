@@ -56,3 +56,7 @@ Coords Point::getCoordinates() const {
     }
     return coordinates;
 }
+
+int Point::numSpecies() const {
+    return nsp;
+}

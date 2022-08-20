@@ -30,7 +30,7 @@ PointBuilder& PointBuilder::addSpecies(vector<double> species) {
     if (point.hasSpecies()) {
         throw std::logic_error("Species vector already set in the build process");
     }
-    if (species.size() != point.nsp) {
+    if (species.size() != point.numSpecies()) {
         throw std::runtime_error("Vector size does not match the "
                 "number of the species of the Point");
     }

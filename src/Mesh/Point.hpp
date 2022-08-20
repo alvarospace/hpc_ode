@@ -27,6 +27,7 @@ class Point {
         double getEnthalpy() const;
         vector<double> getSpecies() const;
         Coords getCoordinates() const;
+        int numSpecies() const;
 
     private:
         // Private constructor to force PointBuilder functionality

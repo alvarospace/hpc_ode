@@ -5,6 +5,11 @@
 
 using std::vector;
 
+Mesh& Mesh::get() {
+    static Mesh mesh;
+    return mesh;
+}
+
 vector<double>& Mesh::getTemperatureVector() {
     return temperature;
 }
@@ -26,9 +31,10 @@ vector<Coords>& Mesh::getCoordinatesVector() {
 }
 
 void Mesh::addPoint(Point const& newPoint) {
-    if (size() == 0) {
+    if (totalSize() == 0) {
         enthalpyFlag = newPoint.hasEnthalpy();
         coordFlag = newPoint.hasCoordinates();
+        nsp = newPoint.numSpecies();
     }
     if (isCompatible(newPoint)) {
         temperature.push_back(newPoint.getTemperature());
@@ -45,8 +51,12 @@ void Mesh::addPoint(Point const& newPoint) {
     }
 }
 
-int Mesh::size() const {
+int Mesh::totalSize() const {
     return temperature.size();
+}
+
+int Mesh::numSpecies() const {
+    return nsp;
 }
 
 bool Mesh::hasEnthalpy() const {
@@ -57,7 +67,18 @@ bool Mesh::hasCoordinates() const {
     return coordFlag;
 }
 
+void Mesh::clear() {
+    temperature.clear();
+    enthalpy.clear();
+    speciesMatrix.clear();
+    coordinates.clear();
+    enthalpyFlag = false;
+    coordFlag = false;
+    nsp = 0;
+}
+
 bool Mesh::isCompatible(Point const& point) const {
     return point.hasEnthalpy() == hasEnthalpy() &&
-            point.hasCoordinates() == hasCoordinates();
+            point.hasCoordinates() == hasCoordinates() &&
+            point.numSpecies() == numSpecies();
 }
