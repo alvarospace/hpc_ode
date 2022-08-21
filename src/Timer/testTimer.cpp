@@ -1,7 +1,6 @@
 #include "Timer.hpp"
 #include <cassert>
 #include <unistd.h>
-#include <iostream>
 
 void testTimer() {
     int const sleepTime {1'000'000}; //Micro-seconds

@@ -2,7 +2,6 @@
 #include "Point.hpp"
 #include "PointBuilder.hpp"
 #include <cassert>
-#include <iostream>
 #include <array>
 #include <stdexcept>
 

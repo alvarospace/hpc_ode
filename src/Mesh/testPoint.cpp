@@ -1,6 +1,5 @@
 #include "Point.hpp"
 #include "PointBuilder.hpp"
-#include <iostream>
 #include <string>
 #include <cassert>
 
