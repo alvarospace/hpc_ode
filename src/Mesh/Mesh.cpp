@@ -31,7 +31,7 @@ vector<Coords>& Mesh::getCoordinatesVector() {
 }
 
 void Mesh::addPoint(Point const& newPoint) {
-    if (totalSize() == 0) {
+    if (totalSize() == 0 && newPoint.isReady()) {
         enthalpyFlag = newPoint.hasEnthalpy();
         coordFlag = newPoint.hasCoordinates();
         nsp = newPoint.numSpecies();
@@ -80,5 +80,6 @@ void Mesh::clear() {
 bool Mesh::isCompatible(Point const& point) const {
     return point.hasEnthalpy() == hasEnthalpy() &&
             point.hasCoordinates() == hasCoordinates() &&
-            point.numSpecies() == numSpecies();
+            point.numSpecies() == numSpecies() &&
+            point.isReady();
 }

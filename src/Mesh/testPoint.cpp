@@ -41,7 +41,7 @@ void testBadBuild() {
 }
 
 void testBadConstruction() {
-    string expected_msg = "Temperature already set in the build process";
+    string const expected_msg = "Temperature already set in the build process";
     string error_msg;
     try {
         Point point = Point::create(nsp)
@@ -57,7 +57,7 @@ void testBadConstruction() {
 }
 
 void testBadSpecies() {
-    string expected_msg = "Species vector breaks mass conservation law";
+    string const expected_msg = "Species vector breaks mass conservation law";
     string error_msg;
     try {
         Point point = Point::create(nsp)
