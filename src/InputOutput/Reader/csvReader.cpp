@@ -125,5 +125,5 @@ Point csvReader::readPoint(string line, csvReader::HeaderInfo headerInfo) {
     if (headerInfo.hasCoords)
         pointBuilder.addCoordinates(coords);
 
-    return move(pointBuilder);
+    return pointBuilder;
 }
