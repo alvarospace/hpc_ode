@@ -35,7 +35,7 @@ PointBuilder& PointBuilder::addSpecies(vector<double> species) {
                 "number of the species of the Point");
     }
 
-    bool all_less_equal_1 = std::all_of(std::begin(species), std::end(species), [] (double sp) {
+    bool all_less_equal_1 = std::all_of(std::begin(species), std::end(species),[](double const &sp) {
         return sp <= 1.0;
     });
     
@@ -47,7 +47,7 @@ PointBuilder& PointBuilder::addSpecies(vector<double> species) {
         throw std::runtime_error("Species vector breaks mass conservation law");
     }
 
-    point.species = species;
+    point.species = std::move(species);
     point.flagSpecies = true;
     return *this;
 }
