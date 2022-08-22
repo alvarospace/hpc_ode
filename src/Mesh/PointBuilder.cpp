@@ -1,5 +1,5 @@
-#include "PointBuilder.hpp"
-#include "Point.hpp"
+#include "Mesh/PointBuilder.hpp"
+#include "Mesh/Point.hpp"
 #include <stdexcept>
 #include <vector>
 #include <algorithm>

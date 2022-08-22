@@ -1,4 +1,4 @@
-#include "Mesh.hpp"
+#include "Mesh/Mesh.hpp"
 
 #include <vector>
 #include <stdexcept>

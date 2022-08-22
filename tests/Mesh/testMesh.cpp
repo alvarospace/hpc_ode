@@ -1,6 +1,6 @@
-#include "Mesh.hpp"
-#include "Point.hpp"
-#include "PointBuilder.hpp"
+#include "Mesh/Mesh.hpp"
+#include "Mesh/Point.hpp"
+#include "Mesh/PointBuilder.hpp"
 #include <cassert>
 #include <array>
 #include <stdexcept>
