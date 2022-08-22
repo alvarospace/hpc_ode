@@ -10,13 +10,24 @@
 
 using namespace std;
 
+csvReader::csvReader(string _csvFilename) {
+    string endWith {".csv"};
+    if (_csvFilename.find(endWith) == string::npos) {
+        stringstream ss;
+        ss << "Input file should end with '.csv', actual: ";
+        ss << _csvFilename;
+        throw invalid_argument(ss.str());
+    }
+    csvFilename = _csvFilename;
+}
+
 void csvReader::read() {
     // Open csv file
     ifstream file(csvFilename);
     if (!file.is_open()) {
         stringstream ss;
         ss << "Failing opening file: ";
-        ss << csvFilename << endl;
+        ss << csvFilename;
         throw runtime_error(ss.str());
     }
 

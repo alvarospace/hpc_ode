@@ -22,7 +22,7 @@ class csvReader : public Reader {
         Point readPoint(string line, HeaderInfo headerInfo);
     
     public:
-        csvReader(string _csvFilename) : csvFilename(_csvFilename) {}
+        csvReader(string _csvFilename);
         
         void read() override;
 };

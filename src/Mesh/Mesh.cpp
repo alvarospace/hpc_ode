@@ -15,6 +15,8 @@ vector<double>& Mesh::getTemperatureVector() {
 }
 
 vector<double>& Mesh::getEnthalpyVector() {
+    if (!hasEnthalpy())
+        throw std::runtime_error("Mesh does not have enthalpy");
     return enthalpy;
 }
 
@@ -27,6 +29,8 @@ vector<vector<double>>& Mesh::getSpeciesMatrix() {
 }
 
 vector<Coords>& Mesh::getCoordinatesVector() {
+    if (!hasCoordinates())
+        throw std::runtime_error("Mesh does not have coordinates");
     return coordinates;
 }
 
