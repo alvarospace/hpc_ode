@@ -2,3 +2,4 @@ build/
 .vscode/
 test/100/
 .env/
+ext_install/
