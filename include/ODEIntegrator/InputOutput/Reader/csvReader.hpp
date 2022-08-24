@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Reader/Reader.hpp"
-#include "Mesh/Mesh.hpp"
+#include "ODEIntegrator/InputOutput/Reader/Reader.hpp"
+#include "ODEIntegrator/Mesh/Point.hpp"
 #include <string>
 
 using std::string;

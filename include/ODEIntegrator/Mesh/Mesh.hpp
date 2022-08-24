@@ -1,5 +1,5 @@
 #pragma once
-#include "Point.hpp"
+#include "ODEIntegrator/Mesh/Point.hpp"
 #include <vector>
 
 using std::vector;

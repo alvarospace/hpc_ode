@@ -4,4 +4,4 @@ add_library(Mesh STATIC
     PointBuilder.cpp
 )
 
-target_include_directories(Mesh PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(Mesh PUBLIC ${CMAKE_SOURCE_DIR}/include)

@@ -1,7 +1,7 @@
-#include "Reader/csvReader.hpp"
-#include "Mesh/Mesh.hpp"
-#include "Mesh/Point.hpp"
-#include "Mesh/PointBuilder.hpp"
+#include "ODEIntegrator/InputOutput/Reader/csvReader.hpp"
+#include "ODEIntegrator/Mesh/Mesh.hpp"
+#include "ODEIntegrator/Mesh/Point.hpp"
+#include "ODEIntegrator/Mesh/PointBuilder.hpp"
 #include <string>
 #include <sstream>
 #include <fstream>
