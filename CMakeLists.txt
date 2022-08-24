@@ -6,11 +6,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 ########### Dependencies #########
 include(ExternalProject)
 
+
+# Cantera
+set(CANTERA_PREFIX "../../ext_install/cantera" CACHE PATH "Path where cantera will be installed")
 ExternalProject_Add(cantera
     SOURCE_DIR ${CMAKE_SOURCE_DIR}/ext/cantera
     BUILD_IN_SOURCE 1
     CONFIGURE_COMMAND  ""
-    BUILD_COMMAND scons build prefix=../../ext_install/cantera python_package=none
+    BUILD_COMMAND scons build prefix=${CANTERA_PREFIX} python_package=none
     INSTALL_COMMAND scons install
 )
 
