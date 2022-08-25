@@ -4,6 +4,8 @@
 #include <cassert>
 #include <array>
 #include <stdexcept>
+#include <algorithm>
+#include <iostream>
 
 using namespace std;
 
@@ -85,18 +87,36 @@ void testAddBadPointToMesh() {
     assert(mesh.totalSize() == 0);
 }
 
-void AddPointToMesh() {
+void addPointToMesh() {
     Mesh &mesh = Mesh::get();
     Point point = createPoint();
     mesh.addPoint(point);
 }
 
+void alterVectorState() {
+    Mesh &mesh = Mesh::get();
+    int nsp = mesh.numSpecies();
+    double* firstVector = mesh.getSpeciesPointer(0);
+    
+    for (int i = 0; i < nsp; i++) {
+        firstVector[i] = 0.0;
+    }
+}
+
 void testMeshState() {
-    AddPointToMesh();
+    addPointToMesh();
     Mesh &mesh = Mesh::get();
     Point point = createPoint();
     mesh.addPoint(point);
     assert(mesh.totalSize() == 2);
+
+    // Check changed state
+    alterVectorState();
+    vector firstVector = mesh.getSpeciesVector(0);
+    for_each(begin(firstVector), end(firstVector), [](double const &elem){
+        assert(elem == 0);
+    });
+
     mesh.clear();
 }
 

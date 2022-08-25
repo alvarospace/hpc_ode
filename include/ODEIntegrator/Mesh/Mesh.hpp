@@ -16,6 +16,10 @@ class Mesh {
         vector<vector<double>>& getSpeciesMatrix();
         vector<Coords>& getCoordinatesVector();
 
+        double* getTemperaturePointer();
+        double* getEnthalpyPointer();
+        double* getSpeciesPointer(int index);
+
         void addPoint(Point const& newPoint);
         int totalSize() const;
         int numSpecies() const;

@@ -34,6 +34,20 @@ vector<Coords>& Mesh::getCoordinatesVector() {
     return coordinates;
 }
 
+double* Mesh::getTemperaturePointer() {
+    return temperature.data();
+}
+
+double* Mesh::getEnthalpyPointer() {
+    if (!hasEnthalpy())
+        throw std::runtime_error("Mesh does not have enthalpy");
+    return enthalpy.data();
+}
+
+double* Mesh::getSpeciesPointer(int index) {
+    return speciesMatrix.at(index).data();
+}
+
 void Mesh::addPoint(Point const& newPoint) {
     if (totalSize() == 0 && newPoint.isReady()) {
         enthalpyFlag = newPoint.hasEnthalpy();
