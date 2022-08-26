@@ -8,14 +8,16 @@ include(ExternalProject)
 
 
 # Cantera
-set(CANTERA_PREFIX "../../ext_install/cantera" CACHE PATH "Path where cantera will be installed")
-ExternalProject_Add(cantera
+set(CANTERA_PREFIX ${CMAKE_SOURCE_DIR}/ext_install/cantera CACHE PATH "Path where cantera will be installed")
+ExternalProject_Add(CanteraProject
     SOURCE_DIR ${CMAKE_SOURCE_DIR}/ext/cantera
     BUILD_IN_SOURCE 1
     CONFIGURE_COMMAND  ""
     BUILD_COMMAND scons build prefix=${CANTERA_PREFIX} python_package=none
     INSTALL_COMMAND scons install
 )
+set(CANTERA_LIB_DIR ${CANTERA_PREFIX}/lib)
+set(CANTERA_INCLUDE_DIR ${CANTERA_PREFIX}/include)
 
 ########### MAIN PROJECT #########
 

@@ -39,7 +39,7 @@ PointBuilder& PointBuilder::addSpecies(vector<double> species) {
         return sp <= 1.0;
     });
     
-    int total_sum = std::accumulate(std::begin(species), std::end(species), 0.0);
+    double total_sum = std::accumulate(std::begin(species), std::end(species), 0.0);
     double error = 0.01;
     bool mass_conservation = total_sum > (1.0 - error) && total_sum < (1.0 + error);
 
