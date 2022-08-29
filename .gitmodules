@@ -1,3 +1,6 @@
 [submodule "ext/cantera"]
 	path = ext/cantera
 	url = git@github.com:Cantera/cantera.git
+[submodule "ext/cuda-samples"]
+	path = ext/cuda-samples
+	url = git@github.com:NVIDIA/cuda-samples.git
