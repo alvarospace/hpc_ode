@@ -1,6 +1,7 @@
 add_library(Integrators STATIC 
     CanteraIntegrator.cpp
     CanteraIntegratorOMP.cpp
+    CVodeIntegrator.cpp
 )
 
 find_package(Threads REQUIRED)
