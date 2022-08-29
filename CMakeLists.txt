@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 ########### Dependencies #########
 include(ExternalProject)
-
+set(EXT_DIR ${CMAKE_SOURCE_DIR}/ext)
 
 # Cantera
 set(CANTERA_PREFIX ${CMAKE_SOURCE_DIR}/ext_install/cantera CACHE PATH "Path where cantera will be installed")
@@ -19,18 +19,26 @@ ExternalProject_Add(CanteraProject
 set(CANTERA_LIB_DIR ${CANTERA_PREFIX}/lib)
 set(CANTERA_INCLUDE_DIR ${CANTERA_PREFIX}/include)
 
+# Cuda Samples
+ExternalProject_Add(cuda-samplesProject
+    SOURCE_DIR ${CMAKE_SOURCE_DIR}/ext/cuda-samples
+    BUILD_IN_SOURCE 1
+    CONFIGURE_COMMAND  ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+)
+set(CUDA_SAMPLES_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/ext/cuda-samples/Common)
+
+
 ########### MAIN PROJECT #########
 
 add_subdirectory(src)
-
-
 
 ############ TESTS ##########
 include(CTest)
 enable_testing()
 
 add_subdirectory(tests)
-
 
 ########## PACK ##########
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
