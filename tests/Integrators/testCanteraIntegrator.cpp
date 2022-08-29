@@ -87,7 +87,6 @@ void testSerialvsOMP(string filename, string mechanism) {
     // Species comparison
     bool speciesEqual = equal(begin(vSerial), end(vSerial), begin(vOMP), [](double const& i, double const& j) {
         double const err = 1e-70;
-        cout << i << " " << j << endl;
         return abs(i - j) <= err;
     });
     assert(speciesEqual);
@@ -96,8 +95,8 @@ void testSerialvsOMP(string filename, string mechanism) {
 } 
 
 int main() {
-    //testCanteraIntegrator("data/h2o2.csv", "h2o2.yaml");
-    //testCanteraIntegrator("data/res_gri_100.csv", "gri30.yaml");
+    testCanteraIntegrator("data/h2o2.csv", "h2o2.yaml");
+    testCanteraIntegrator("data/res_gri_100.csv", "gri30.yaml");
     testSerialvsOMP("data/res_gri_100.csv", "gri30.yaml");
     return 0;
 }
