@@ -4,3 +4,6 @@
 [submodule "ext/cuda-samples"]
 	path = ext/cuda-samples
 	url = git@github.com:NVIDIA/cuda-samples.git
+[submodule "ext/sundials"]
+	path = ext/sundials
+	url = git@github.com:LLNL/sundials.git
