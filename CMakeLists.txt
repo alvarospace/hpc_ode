@@ -1,16 +1,18 @@
 cmake_minimum_required(VERSION 3.0.0)
-project(HPC_ODE VERSION 0.1.0)
+project(HPC_ODE VERSION 0.1.0 LANGUAGES C CXX CUDA)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+enable_language(Fortran)
 
 ########### Dependencies #########
 include(ExternalProject)
 set(EXT_DIR ${CMAKE_SOURCE_DIR}/ext)
+set(EXT_INSTALL_DIR ${CMAKE_SOURCE_DIR}/ext_install CACHE PATH "Path where dependencies will be installed")
 
-# Cantera
-set(CANTERA_PREFIX ${CMAKE_SOURCE_DIR}/ext_install/cantera CACHE PATH "Path where cantera will be installed")
+# Cantera v2.6.0
+set(CANTERA_PREFIX ${EXT_INSTALL_DIR}/cantera)
 ExternalProject_Add(CanteraProject
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/ext/cantera
+    SOURCE_DIR ${EXT_DIR}/cantera
     BUILD_IN_SOURCE 1
     CONFIGURE_COMMAND  ""
     BUILD_COMMAND scons build prefix=${CANTERA_PREFIX} python_package=none
@@ -21,13 +23,48 @@ set(CANTERA_INCLUDE_DIR ${CANTERA_PREFIX}/include)
 
 # Cuda Samples
 ExternalProject_Add(cuda-samplesProject
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/ext/cuda-samples
+    SOURCE_DIR ${EXT_DIR}/cuda-samples
     BUILD_IN_SOURCE 1
     CONFIGURE_COMMAND  ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
 )
-set(CUDA_SAMPLES_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/ext/cuda-samples/Common)
+set(CUDA_SAMPLES_INCLUDE_DIR ${EXT_DIR}/cuda-samples/Common)
+
+# Magma v2.6.2
+# ExternalProject_Add(MagmaProject
+#     SOURCE_DIR ${EXT_DIR}/magma
+#     CMAKE_ARGS
+#         -DCMAKE_INSTALL_PREFIX=${EXT_INSTALL_DIR}/magma
+#         -DGPU_TARGET="Ampere"
+#         -DMAGMA_ENABLE_CUDA=ON
+#         -DMAGMA_ENABLE_HIP=OFF
+#         -DUSE_FORTRAN=OFF
+# )
+
+# Sundials v6.3.0
+# ExternalProject_Add(SundialsProject
+#     SOURCE_DIR ${EXT_DIR}/sundials
+#     CMAKE_ARGS
+#         -DCMAKE_INSTALL_PREFIX=${EXT_INSTALL_DIR}/sundials
+#         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+#         -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+#         -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+#         -DCMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER}
+#         -DENABLE_CUDA="ON"
+#         -DCUDA_TOOLKIT_ROOT_DIR=${CUDA_TOOLKIT_ROOT_DIR}}
+#         -DEXAMPLES_ENABLE_C="ON"
+#         -DEXAMPLES_ENABLE_CXX="ON"
+#         -DEXAMPLES_ENABLE_CUDA="ON"
+#         -DENABLE_LAPACK="ON"
+#         #-DENABLE_MAGMA="ON" \
+#         #-DMAGMA_DIR="$HOME/install/magma" \
+#         -DSUNDIALS_INDEX_SIZE="32"
+#         -DENABLE_OPENMP="ON"
+#         -DENABLE_PTHREAD="ON"
+#         -DSUNDIALS_BUILD_WITH_PROFILING="ON"
+#         -DSUNDIALS_LOGGING_LEVEL=4
+# )
 
 
 ########### MAIN PROJECT #########
