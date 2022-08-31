@@ -32,39 +32,51 @@ ExternalProject_Add(cuda-samplesProject
 set(CUDA_SAMPLES_INCLUDE_DIR ${EXT_DIR}/cuda-samples/Common)
 
 # Magma v2.6.2
-# ExternalProject_Add(MagmaProject
-#     SOURCE_DIR ${EXT_DIR}/magma
-#     CMAKE_ARGS
-#         -DCMAKE_INSTALL_PREFIX=${EXT_INSTALL_DIR}/magma
-#         -DGPU_TARGET="Ampere"
-#         -DMAGMA_ENABLE_CUDA=ON
-#         -DMAGMA_ENABLE_HIP=OFF
-#         -DUSE_FORTRAN=OFF
+message("First generate magma precisions with resources/magma_installation/magma_preCMake.sh")
+set(GPU_TARGET Ampere CACHE STRING "GPU target device such as Fermi, Kepler, Maxwell, Pascal, Volta, Turing, Ampere")
+ExternalProject_Add(MagmaProject
+    SOURCE_DIR ${EXT_DIR}/prueba_magma/magma-2.6.2
+    CMAKE_ARGS
+        -DCMAKE_INSTALL_PREFIX=${EXT_INSTALL_DIR}/magma
+        -DGPU_TARGET=${GPU_TARGET}
+        -DMAGMA_ENABLE_CUDA=ON
+        -DMAGMA_ENABLE_HIP=OFF
+        -DUSE_FORTRAN=ON
+)
+# ExternalProject_Add_Step(MagmaProject prebuild
+#     COMMAND ${CMAKE_COMMAND} -E echo "BACKEND=cuda\nGPU_TARGET=${GPU_TARGET}" > make.inc
+#     COMMAND ${CMAKE_COMMAND} -E make generate
+#     COMMENT "Preconfiguring magma with make.inc file -> GPU_TARGET = ${GPU_TARGET}"
+#     DEPENDERS configure
+#     WORKING_DIRECTORY ${EXT_DIR}/magma
 # )
+# ExternalProject_Add_StepTargets(MagmaProject prebuild)
 
 # Sundials v6.3.0
-# ExternalProject_Add(SundialsProject
-#     SOURCE_DIR ${EXT_DIR}/sundials
-#     CMAKE_ARGS
-#         -DCMAKE_INSTALL_PREFIX=${EXT_INSTALL_DIR}/sundials
-#         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-#         -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-#         -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-#         -DCMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER}
-#         -DENABLE_CUDA="ON"
-#         -DCUDA_TOOLKIT_ROOT_DIR=${CUDA_TOOLKIT_ROOT_DIR}}
-#         -DEXAMPLES_ENABLE_C="ON"
-#         -DEXAMPLES_ENABLE_CXX="ON"
-#         -DEXAMPLES_ENABLE_CUDA="ON"
-#         -DENABLE_LAPACK="ON"
-#         #-DENABLE_MAGMA="ON" \
-#         #-DMAGMA_DIR="$HOME/install/magma" \
-#         -DSUNDIALS_INDEX_SIZE="32"
-#         -DENABLE_OPENMP="ON"
-#         -DENABLE_PTHREAD="ON"
-#         -DSUNDIALS_BUILD_WITH_PROFILING="ON"
-#         -DSUNDIALS_LOGGING_LEVEL=4
-# )
+set(CUDA_TOOLKIT_ROOT_DIR /usr/local/cuda CACHE PATH "Path where cuda toolkit is installed")
+ExternalProject_Add(SundialsProject
+    SOURCE_DIR ${EXT_DIR}/sundials
+    DEPENDS MagmaProject
+    CMAKE_ARGS
+        -DCMAKE_INSTALL_PREFIX=${EXT_INSTALL_DIR}/sundials
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+        -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+        -DCMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER}
+        -DENABLE_CUDA=ON
+        -DCUDA_TOOLKIT_ROOT_DIR=${CUDA_TOOLKIT_ROOT_DIR}
+        -DEXAMPLES_ENABLE_C=ON
+        -DEXAMPLES_ENABLE_CXX=ON
+        -DEXAMPLES_ENABLE_CUDA=ON
+        -DENABLE_LAPACK=ON
+        -DENABLE_MAGMA=ON
+        -DMAGMA_DIR=${EXT_INSTALL_DIR}/magma
+        -DSUNDIALS_INDEX_SIZE=32
+        -DENABLE_OPENMP=ON
+        -DENABLE_PTHREAD=ON
+        -DSUNDIALS_BUILD_WITH_PROFILING=ON
+        -DSUNDIALS_LOGGING_LEVEL=4
+)
 
 
 ########### MAIN PROJECT #########
