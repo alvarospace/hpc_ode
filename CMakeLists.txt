@@ -32,10 +32,9 @@ ExternalProject_Add(cuda-samplesProject
 set(CUDA_SAMPLES_INCLUDE_DIR ${EXT_DIR}/cuda-samples/Common)
 
 # Magma v2.6.2
-message("First generate magma precisions with resources/magma_installation/magma_preCMake.sh")
 set(GPU_TARGET Ampere CACHE STRING "GPU target device such as Fermi, Kepler, Maxwell, Pascal, Volta, Turing, Ampere")
 ExternalProject_Add(MagmaProject
-    SOURCE_DIR ${EXT_DIR}/prueba_magma/magma-2.6.2
+    SOURCE_DIR ${EXT_DIR}/magma-2.6.2
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=${EXT_INSTALL_DIR}/magma
         -DGPU_TARGET=${GPU_TARGET}

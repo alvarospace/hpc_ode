@@ -3,3 +3,4 @@ build/
 test/100/
 .env/
 ext_install/
+ext/magma-2.6.2/include/magma_mangling_cmake.h
