@@ -42,6 +42,8 @@ ExternalProject_Add(MagmaProject
         -DMAGMA_ENABLE_HIP=OFF
         -DUSE_FORTRAN=ON
 )
+set(MAGMA_LIB_DIR ${EXT_INSTALL_DIR}/magma/lib)
+set(MAGMA_INCLUDE_DIR ${EXT_INSTALL_DIR}/magma/include)
 # ExternalProject_Add_Step(MagmaProject prebuild
 #     COMMAND ${CMAKE_COMMAND} -E echo "BACKEND=cuda\nGPU_TARGET=${GPU_TARGET}" > make.inc
 #     COMMAND ${CMAKE_COMMAND} -E make generate
@@ -76,6 +78,8 @@ ExternalProject_Add(SundialsProject
         -DSUNDIALS_BUILD_WITH_PROFILING=ON
         -DSUNDIALS_LOGGING_LEVEL=4
 )
+set(SUNDIALS_LIB_DIR ${EXT_INSTALL_DIR}/sundials/lib)
+set(SUNDIALS_INCLUDE_DIR ${EXT_INSTALL_DIR}/sundials/include)
 
 
 ########### MAIN PROJECT #########

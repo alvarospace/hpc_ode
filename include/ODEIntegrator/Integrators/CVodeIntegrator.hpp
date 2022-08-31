@@ -8,6 +8,6 @@ class CVodeIntegrator : public Integrator, public MechanismDriver {
         virtual void init(IntegratorConfig config) override;
         virtual void integrate(double t0, double t) override;
         virtual void clean() override;
-        virtual void dydt_func() override;
-        virtual void jacobian_func() override;
+        virtual dydt_driver dydt_func() override;
+        virtual jacobian_driver jacobian_func() override;
 };
