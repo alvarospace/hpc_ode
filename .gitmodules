@@ -7,6 +7,4 @@
 [submodule "ext/sundials"]
 	path = ext/sundials
 	url = git@github.com:LLNL/sundials.git
-[submodule "ext/magma"]
-	path = ext/magma
-	url = git@bitbucket.org:icl/magma.git
+
