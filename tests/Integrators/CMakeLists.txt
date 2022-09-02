@@ -8,3 +8,9 @@ add_custom_command(TARGET testCanteraIntegrator
 )
 
 add_test(NAME testCanteraIntegrator COMMAND testCanteraIntegrator)
+
+##########
+
+add_executable(testCVodeIntegrator testCVodeIntegrator.cpp)
+target_link_libraries(testCVodeIntegrator PRIVATE Integrators Timer)
+add_test(NAME testCVodeIntegrator COMMAND testCVodeIntegrator)
