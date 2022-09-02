@@ -12,7 +12,7 @@ add_dependencies(Integrators CanteraProject)
 target_link_directories(Integrators PUBLIC ${CANTERA_LIB_DIR})
 target_link_directories(Integrators PUBLIC ${SUNDIALS_LIB_DIR})
 
-target_link_libraries(Integrators PUBLIC Mesh Reader cantera fmt yaml-cpp Threads::Threads OpenMP::OpenMP_CXX mechanismCPU)
+target_link_libraries(Integrators PUBLIC Mesh Reader cantera fmt yaml-cpp Threads::Threads OpenMP::OpenMP_CXX mechanismCPU sundials_cvode.a)
 
 target_include_directories(Integrators PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(Integrators PUBLIC ${CANTERA_INCLUDE_DIR})
