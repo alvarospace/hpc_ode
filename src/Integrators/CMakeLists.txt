@@ -2,6 +2,7 @@ add_library(Integrators STATIC
     CanteraIntegrator.cpp
     CanteraIntegratorOMP.cpp
     CVodeIntegrator.cpp
+    Drivers/CVodeSerialDriver.cpp
 )
 
 find_package(Threads REQUIRED)

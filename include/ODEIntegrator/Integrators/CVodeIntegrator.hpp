@@ -3,7 +3,6 @@
 #include "ODEIntegrator/Integrators/Integrator.hpp"
 #include "ODEIntegrator/Integrators/MechanismDriver.hpp"
 #include "ODEIntegrator/Mesh/Mesh.hpp"
-#include "sundials/sundials_linearsolver.h"
 
 #include <vector>
 #include <memory>

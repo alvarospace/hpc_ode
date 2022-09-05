@@ -1,5 +1,6 @@
 #include "ODEIntegrator/Integrators/CVodeIntegrator.hpp"
 #include "ODEIntegrator/Mesh/Mesh.hpp"
+#include "ODEIntegrator/Integrators/Drivers/CVodeSerialDriver.hpp"
 
 #include "sundials/sundials_nvector.h"
 #include "sundials/sundials_matrix.h"
@@ -12,13 +13,11 @@
 #include "sunmatrix/sunmatrix_dense.h"
 #include "sunlinsol/sunlinsol_dense.h"
 
-// C code from mechanism
+// // C code from mechanism
 #ifdef __cplusplus
 extern "C" {
 #endif
 #include "Mechanism/CPU/header.h"
-#include "Mechanism/CPU/dydt.h"
-#include "Mechanism/CPU/jacob.h"
 #ifdef __cplusplus
 }
 #endif
@@ -30,25 +29,6 @@ extern "C" {
 #include <memory>
 
 using namespace std;
-
-int dydt_cvode_serial(double t, N_Vector y, N_Vector ydot, void* userdata) {
-    double* yptr = N_VGetArrayPointer(y);
-    double* ydotptr = N_VGetArrayPointer(ydot);
-    CVodeIntegrator::UserData* udata = static_cast<CVodeIntegrator::UserData*>(userdata);
-
-    dydt(t, udata->pressure, yptr, ydotptr);
-
-    return 0;
-}
-int jacobian_cvode_serial(double t, N_Vector y, N_Vector ydot, SUNMatrix J, void* userdata, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3) {
-    double* yptr = N_VGetArrayPointer(y);
-    double* Jptr = SM_DATA_D(J);
-    CVodeIntegrator::UserData* udata = static_cast<CVodeIntegrator::UserData*>(userdata);
-
-    eval_jacob(t, udata->pressure, yptr, Jptr);
-
-    return 0;
-}
 
 void CVodeIntegrator::init(IntegratorConfig config) {
     Integrator::init(config);
@@ -149,6 +129,7 @@ void CVodeIntegrator::integrateSystem(double* system, double dt) {
 dydt_driver CVodeIntegrator::dydt_func() {
     return dydt_cvode_serial;
 }
+
 jacobian_driver CVodeIntegrator::jacobian_func() {
     return jacobian_cvode_serial;
 }
