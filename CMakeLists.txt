@@ -81,7 +81,6 @@ ExternalProject_Add(SundialsProject
 set(SUNDIALS_LIB_DIR ${EXT_INSTALL_DIR}/sundials/lib)
 set(SUNDIALS_INCLUDE_DIR ${EXT_INSTALL_DIR}/sundials/include)
 
-
 ########### MAIN PROJECT #########
 
 add_subdirectory(src)

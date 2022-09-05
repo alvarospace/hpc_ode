@@ -6,8 +6,11 @@
 
 #include <vector>
 #include <memory>
+#include <string>
+#include <sstream>
 
 using std::vector;
+using std::string;
 
 class CVodeIntegrator : public Integrator, public MechanismDriver {
     public:
@@ -16,6 +19,8 @@ class CVodeIntegrator : public Integrator, public MechanismDriver {
         virtual void clean() override {}
         virtual dydt_driver dydt_func() override;
         virtual jacobian_driver jacobian_func() override;
+
+        virtual void check_return_value(void* returnValue, string const funcName, int const opt);
 
         struct UserData {
             double pressure;

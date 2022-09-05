@@ -27,6 +27,7 @@ extern "C" {
 #include <algorithm>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 
 using namespace std;
 
@@ -70,7 +71,7 @@ vector<vector<double>> CVodeIntegrator::data_transfer_from_mesh(Mesh& mesh) {
         copy(begin(species), end(species) - 1, begin(systemsData[i]) + 1);
     }
 
-    return move(systemsData);
+    return systemsData;
 }
 
 void CVodeIntegrator::data_transfer_to_mesh(Mesh& mesh, vector<vector<double>> systemsData) {
@@ -81,7 +82,7 @@ void CVodeIntegrator::data_transfer_to_mesh(Mesh& mesh, vector<vector<double>> s
         species = mesh.getSpeciesPointer(i);
         vector<double> species2 = mesh.getSpeciesVector(i);
         double tam = species2.size();
-        move(begin(systemsData[i]) + 1, end(systemsData[i]), species);
+        copy(begin(systemsData[i]) + 1, end(systemsData[i]), species);
         species[systemSize - 1] = last_specie_calculation(species);
     }
 }
@@ -102,19 +103,37 @@ void CVodeIntegrator::integrateSystem(double* system, double dt) {
     SUNLinearSolver LS;
     void *cvode_mem;
     double t0 = 0.0f;
+    int retVal;
 
     y = N_VNew_Serial(systemSize, sunctx);
+    check_return_value(static_cast<void*>(y), "N_VNew_Serial", 0);
+
     double* yptr = N_VGetArrayPointer(y);
     copy(system, system + systemSize, yptr);
 
     cvode_mem = CVodeCreate(CV_BDF, sunctx);
-    CVodeInit(cvode_mem, this->dydt_func(), t0, y);
-    CVodeSStolerances(cvode_mem, reltol, abstol);
+    check_return_value(static_cast<void*>(cvode_mem), "CVodeCreate", 0);
+
+    retVal = CVodeInit(cvode_mem, this->dydt_func(), t0, y);
+    check_return_value(&retVal, "CVodeInit", 1);
+
+    retVal = CVodeSStolerances(cvode_mem, reltol, abstol);
+    check_return_value(&retVal, "CVodeSStolerances", 1);
+
     J = SUNDenseMatrix(systemSize, systemSize, sunctx);
+    check_return_value(static_cast<void*>(J), "SUNDenseMatrix", 0);
+
     LS = SUNLinSol_Dense(y, J, sunctx);
-    CVodeSetLinearSolver(cvode_mem, LS, J);
-    CVodeSetJacFn(cvode_mem, this->jacobian_func());
-    CVodeSetUserData(cvode_mem, uData.get());
+    check_return_value(static_cast<void*>(LS), "SUNLinSol_Dense", 0);
+
+    retVal = CVodeSetLinearSolver(cvode_mem, LS, J);
+    check_return_value(&retVal, "CVodeSetLinearSolver", 1);
+
+    retVal = CVodeSetJacFn(cvode_mem, this->jacobian_func());
+    check_return_value(&retVal, "CVodeSetJacFn", 1);
+
+    retVal = CVodeSetUserData(cvode_mem, uData.get());
+    check_return_value(&retVal, "CVodeSetUserData", 1);
 
     CVode(cvode_mem, dt, y, &t0, CV_NORMAL);
 
@@ -124,6 +143,26 @@ void CVodeIntegrator::integrateSystem(double* system, double dt) {
     SUNLinSolFree(LS);
     N_VDestroy(y);
     SUNMatDestroy(J);
+}
+
+void CVodeIntegrator::check_return_value(void* returnValue, string const funcName, int const opt) {
+    int* retVal;
+    stringstream ss;
+    if (opt == 0 && returnValue == NULL) {
+        ss << "SUNDIALS ERROR: " << funcName << "() failed - returned NULL pointer";
+        throw runtime_error(ss.str());
+
+    } else if (opt == 1) {
+        retVal = static_cast<int*>(returnValue);
+        if (*retVal < 0) {
+            ss << "SUNDIALS ERROR: " << funcName << "() failed with returned value = " << *retVal;
+            throw runtime_error(ss.str());
+        }
+
+    } else if (opt == 2 && returnValue == NULL) {
+        ss << "MEMORY ERROR " << funcName << "() failed- - returned NULL pointer";
+        throw runtime_error(ss.str()); 
+    }
 }
 
 dydt_driver CVodeIntegrator::dydt_func() {
