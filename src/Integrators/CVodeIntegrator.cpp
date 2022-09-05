@@ -10,6 +10,7 @@
 // Sundials serial headers
 #include "nvector/nvector_serial.h"
 #include "sunmatrix/sunmatrix_dense.h"
+#include "sunlinsol/sunlinsol_dense.h"
 
 // C code from mechanism
 #ifdef __cplusplus
@@ -17,6 +18,7 @@ extern "C" {
 #endif
 #include "Mechanism/CPU/header.h"
 #include "Mechanism/CPU/dydt.h"
+#include "Mechanism/CPU/jacob.h"
 #ifdef __cplusplus
 }
 #endif
@@ -25,28 +27,33 @@ extern "C" {
 #include <vector>
 #include <algorithm>
 #include <iostream>
+#include <memory>
 
 using namespace std;
 
-class userData {
-    public:
-        double pressure;
-};
-
-
-int dydt_cvode(double t, N_Vector y, N_Vector ydot, void* userdata) {
+int dydt_cvode_serial(double t, N_Vector y, N_Vector ydot, void* userdata) {
     double* yptr = N_VGetArrayPointer(y);
     double* ydotptr = N_VGetArrayPointer(ydot);
-    userData* udata = static_cast<userData*>(userdata);
+    CVodeIntegrator::UserData* udata = static_cast<CVodeIntegrator::UserData*>(userdata);
 
     dydt(t, udata->pressure, yptr, ydotptr);
 
     return 0;
 }
-int dummy_func2(double a, N_Vector b, N_Vector c, SUNMatrix d,  void* e, N_Vector f, N_Vector g, N_Vector h) {return 0;}
+int jacobian_cvode_serial(double t, N_Vector y, N_Vector ydot, SUNMatrix J, void* userdata, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3) {
+    double* yptr = N_VGetArrayPointer(y);
+    double* Jptr = SM_DATA_D(J);
+    CVodeIntegrator::UserData* udata = static_cast<CVodeIntegrator::UserData*>(userdata);
+
+    eval_jacob(t, udata->pressure, yptr, Jptr);
+
+    return 0;
+}
 
 void CVodeIntegrator::init(IntegratorConfig config) {
     Integrator::init(config);
+    uData = make_unique<UserData>();
+    uData->pressure = pressure;
 
     // Check compatibility with the mechanism
     if (systemSize != NSP) {
@@ -71,9 +78,6 @@ void CVodeIntegrator::integrate(double t0, double t) {
     data_transfer_to_mesh(mesh, systemsData);
 }
 
-void CVodeIntegrator::clean() {}
-
-
 vector<vector<double>> CVodeIntegrator::data_transfer_from_mesh(Mesh& mesh) {
 
     vector<vector<double>> systemsData(totalSize, vector<double>(systemSize,0.0f));
@@ -83,7 +87,7 @@ vector<vector<double>> CVodeIntegrator::data_transfer_from_mesh(Mesh& mesh) {
     for (int i = 0; i < totalSize; i++) {
         species = mesh.getSpeciesVector(i);
         systemsData[i][0] = temperatures[i];
-        move(begin(species), end(species) - 1, begin(systemsData[i]) + 1);
+        copy(begin(species), end(species) - 1, begin(systemsData[i]) + 1);
     }
 
     return move(systemsData);
@@ -95,8 +99,19 @@ void CVodeIntegrator::data_transfer_to_mesh(Mesh& mesh, vector<vector<double>> s
     for (int i = 0; i < totalSize; i++) {
         temperatures[i] = systemsData[i][0];
         species = mesh.getSpeciesPointer(i);
+        vector<double> species2 = mesh.getSpeciesVector(i);
+        double tam = species2.size();
         move(begin(systemsData[i]) + 1, end(systemsData[i]), species);
+        species[systemSize - 1] = last_specie_calculation(species);
     }
+}
+
+double CVodeIntegrator::last_specie_calculation(double* species) {
+    double y_nsp {0.0f};
+    for (int i = 0; i < systemSize - 1; i++) {
+        y_nsp += species[i];
+    }
+    return 1.0f - y_nsp;
 }
 
 void CVodeIntegrator::integrateSystem(double* system, double dt) {
@@ -106,26 +121,34 @@ void CVodeIntegrator::integrateSystem(double* system, double dt) {
     SUNMatrix J;
     SUNLinearSolver LS;
     void *cvode_mem;
+    double t0 = 0.0f;
 
     y = N_VNew_Serial(systemSize, sunctx);
     double* yptr = N_VGetArrayPointer(y);
     copy(system, system + systemSize, yptr);
 
-    for (int i = 0; i < systemSize; i++) {
-        cout << "yprt[" << i << "]: " << yptr[i] << " ";
-        cout << "system[" << i << "]: " << system[i] << endl;
-    }
+    cvode_mem = CVodeCreate(CV_BDF, sunctx);
+    CVodeInit(cvode_mem, this->dydt_func(), t0, y);
+    CVodeSStolerances(cvode_mem, reltol, abstol);
+    J = SUNDenseMatrix(systemSize, systemSize, sunctx);
+    LS = SUNLinSol_Dense(y, J, sunctx);
+    CVodeSetLinearSolver(cvode_mem, LS, J);
+    CVodeSetJacFn(cvode_mem, this->jacobian_func());
+    CVodeSetUserData(cvode_mem, uData.get());
 
-    CVodeCreate(CV_BDF, sunctx);
-    CVodeInit(cvode_mem, this->dydt_func(), 0.0, y);
-    
+    CVode(cvode_mem, dt, y, &t0, CV_NORMAL);
 
+    copy(yptr, yptr + systemSize, system);
+
+    CVodeFree(&cvode_mem);
+    SUNLinSolFree(LS);
     N_VDestroy(y);
+    SUNMatDestroy(J);
 }
 
 dydt_driver CVodeIntegrator::dydt_func() {
-    return dydt_cvode;
+    return dydt_cvode_serial;
 }
 jacobian_driver CVodeIntegrator::jacobian_func() {
-    return dummy_func2;
+    return jacobian_cvode_serial;
 }
