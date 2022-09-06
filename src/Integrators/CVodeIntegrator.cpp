@@ -80,8 +80,6 @@ void CVodeIntegrator::data_transfer_to_mesh(Mesh& mesh, vector<vector<double>> s
     for (int i = 0; i < totalSize; i++) {
         temperatures[i] = systemsData[i][0];
         species = mesh.getSpeciesPointer(i);
-        vector<double> species2 = mesh.getSpeciesVector(i);
-        double tam = species2.size();
         copy(begin(systemsData[i]) + 1, end(systemsData[i]), species);
         species[systemSize - 1] = last_specie_calculation(species);
     }
@@ -104,40 +102,50 @@ void CVodeIntegrator::integrateSystem(double* system, double dt) {
     void *cvode_mem;
     double t0 = 0.0f;
     int retVal;
+    int maxSteps {10000};
 
-    y = N_VNew_Serial(systemSize, sunctx);
-    check_return_value(static_cast<void*>(y), "N_VNew_Serial", 0);
+    try {
+        y = N_VNew_Serial(systemSize, sunctx);
+        check_return_value(static_cast<void*>(y), "N_VNew_Serial", 0);
 
-    double* yptr = N_VGetArrayPointer(y);
-    copy(system, system + systemSize, yptr);
+        double* yptr = N_VGetArrayPointer(y);
+        copy(system, system + systemSize, yptr);
 
-    cvode_mem = CVodeCreate(CV_BDF, sunctx);
-    check_return_value(static_cast<void*>(cvode_mem), "CVodeCreate", 0);
+        cvode_mem = CVodeCreate(CV_BDF, sunctx);
+        check_return_value(static_cast<void*>(cvode_mem), "CVodeCreate", 0);
 
-    retVal = CVodeInit(cvode_mem, this->dydt_func(), t0, y);
-    check_return_value(&retVal, "CVodeInit", 1);
+        retVal = CVodeInit(cvode_mem, this->dydt_func(), t0, y);
+        check_return_value(&retVal, "CVodeInit", 1);
 
-    retVal = CVodeSStolerances(cvode_mem, reltol, abstol);
-    check_return_value(&retVal, "CVodeSStolerances", 1);
+        retVal = CVodeSStolerances(cvode_mem, reltol, abstol);
+        check_return_value(&retVal, "CVodeSStolerances", 1);
 
-    J = SUNDenseMatrix(systemSize, systemSize, sunctx);
-    check_return_value(static_cast<void*>(J), "SUNDenseMatrix", 0);
+        J = SUNDenseMatrix(systemSize, systemSize, sunctx);
+        check_return_value(static_cast<void*>(J), "SUNDenseMatrix", 0);
 
-    LS = SUNLinSol_Dense(y, J, sunctx);
-    check_return_value(static_cast<void*>(LS), "SUNLinSol_Dense", 0);
+        LS = SUNLinSol_Dense(y, J, sunctx);
+        check_return_value(static_cast<void*>(LS), "SUNLinSol_Dense", 0);
 
-    retVal = CVodeSetLinearSolver(cvode_mem, LS, J);
-    check_return_value(&retVal, "CVodeSetLinearSolver", 1);
+        retVal = CVodeSetLinearSolver(cvode_mem, LS, J);
+        check_return_value(&retVal, "CVodeSetLinearSolver", 1);
 
-    retVal = CVodeSetJacFn(cvode_mem, this->jacobian_func());
-    check_return_value(&retVal, "CVodeSetJacFn", 1);
+        retVal = CVodeSetJacFn(cvode_mem, this->jacobian_func());
+        check_return_value(&retVal, "CVodeSetJacFn", 1);
 
-    retVal = CVodeSetUserData(cvode_mem, uData.get());
-    check_return_value(&retVal, "CVodeSetUserData", 1);
+        retVal = CVodeSetMaxNumSteps(cvode_mem, maxSteps);
+        check_return_value(&retVal, "CVodeSetMaxNumSteps", 1);
 
-    CVode(cvode_mem, dt, y, &t0, CV_NORMAL);
+        retVal = CVodeSetUserData(cvode_mem, uData.get());
+        check_return_value(&retVal, "CVodeSetUserData", 1);
 
-    copy(yptr, yptr + systemSize, system);
+        CVode(cvode_mem, dt, y, &t0, CV_NORMAL);
+
+        copy(yptr, yptr + systemSize, system);
+        
+    } catch (runtime_error const& e) {
+        // TODO: print this message with the logger
+        cout << e.what() << endl;
+    }
 
     CVodeFree(&cvode_mem);
     SUNLinSolFree(LS);

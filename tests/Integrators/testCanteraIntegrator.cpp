@@ -83,6 +83,8 @@ void testSerialvsOMP(string filename, string mechanism) {
     vector<double> vOMP = mesh.getSpeciesVector(50);
 
     assert(serialTimer.getTime() > OMPTimer.getTime());
+    cout << serialTimer.getTime() << endl;
+    cout << OMPTimer.getTime() << endl;
 
     // Species comparison
     bool speciesEqual = equal(begin(vSerial), end(vSerial), begin(vOMP), [](double const& i, double const& j) {

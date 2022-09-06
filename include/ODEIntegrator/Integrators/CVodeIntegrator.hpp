@@ -27,9 +27,9 @@ class CVodeIntegrator : public Integrator, public MechanismDriver {
         };
         
 
-    private:
-        vector<vector<double>> data_transfer_from_mesh(Mesh& mesh);
-        void data_transfer_to_mesh(Mesh& mesh, vector<vector<double>> systemsData);
+    protected:
+        virtual vector<vector<double>> data_transfer_from_mesh(Mesh& mesh);
+        virtual void data_transfer_to_mesh(Mesh& mesh, vector<vector<double>> systemsData);
         void integrateSystem(double* system, double dt);
         double last_specie_calculation(double* species);
 

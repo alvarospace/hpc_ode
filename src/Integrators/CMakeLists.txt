@@ -2,13 +2,14 @@ add_library(Integrators STATIC
     CanteraIntegrator.cpp
     CanteraIntegratorOMP.cpp
     CVodeIntegrator.cpp
+    CVodeIntegratorOMP.cpp
     Drivers/CVodeSerialDriver.cpp
 )
 
 find_package(Threads REQUIRED)
 find_package(OpenMP REQUIRED)
 
-add_dependencies(Integrators CanteraProject)
+add_dependencies(Integrators CanteraProject SundialsProject)
 
 target_link_directories(Integrators PUBLIC ${CANTERA_LIB_DIR})
 target_link_directories(Integrators PUBLIC ${SUNDIALS_LIB_DIR})
