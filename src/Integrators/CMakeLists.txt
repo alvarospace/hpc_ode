@@ -1,4 +1,5 @@
-add_library(Integrators STATIC 
+# CPU
+add_library(IntegratorsCPU STATIC 
     CanteraIntegrator.cpp
     CanteraIntegratorOMP.cpp
     CVodeIntegrator.cpp
@@ -9,14 +10,32 @@ add_library(Integrators STATIC
 find_package(Threads REQUIRED)
 find_package(OpenMP REQUIRED)
 
-add_dependencies(Integrators CanteraProject SundialsProject)
+add_dependencies(IntegratorsCPU CanteraProject SundialsProject)
 
-target_link_directories(Integrators PUBLIC ${CANTERA_LIB_DIR})
-target_link_directories(Integrators PUBLIC ${SUNDIALS_LIB_DIR})
+target_link_directories(IntegratorsCPU PUBLIC ${CANTERA_LIB_DIR})
+target_link_directories(IntegratorsCPU PUBLIC ${SUNDIALS_LIB_DIR})
 
-target_link_libraries(Integrators PUBLIC Mesh Reader cantera fmt yaml-cpp Threads::Threads OpenMP::OpenMP_CXX mechanismCPU sundials_cvode.a)
+target_link_libraries(IntegratorsCPU PUBLIC Mesh Reader mechanismCPU cantera fmt yaml-cpp Threads::Threads OpenMP::OpenMP_CXX sundials_cvode.a)
 
-target_include_directories(Integrators PUBLIC ${CMAKE_SOURCE_DIR}/include)
-target_include_directories(Integrators PUBLIC ${CANTERA_INCLUDE_DIR})
-target_include_directories(Integrators PUBLIC ${SUNDIALS_INCLUDE_DIR})
-target_include_directories(Integrators PUBLIC ${CMAKE_SOURCE_DIR}/src)
+target_include_directories(IntegratorsCPU PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(IntegratorsCPU PUBLIC ${CANTERA_INCLUDE_DIR})
+target_include_directories(IntegratorsCPU PUBLIC ${SUNDIALS_INCLUDE_DIR})
+target_include_directories(IntegratorsCPU PUBLIC ${CMAKE_SOURCE_DIR}/src)
+
+
+# GPU
+add_library(IntegratorsGPU STATIC
+    CVodeIntegratorGPU.cpp
+    Drivers/CVodeGPUDriver.cu
+)
+
+add_dependencies(IntegratorsGPU SundialsProject)
+
+target_link_directories(IntegratorsGPU PUBLIC ${SUNDIALS_LIB_DIR})
+
+target_link_libraries(IntegratorsGPU PUBLIC Mesh Reader mechanismGPU sundials_cvode.a)
+
+target_include_directories(IntegratorsGPU PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(IntegratorsGPU PUBLIC ${SUNDIALS_INCLUDE_DIR})
+target_include_directories(IntegratorsGPU PUBLIC ${CMAKE_SOURCE_DIR}/src)
+target_include_directories(IntegratorsGPU PUBLIC ${MAGMA_INCLUDE_DIR})

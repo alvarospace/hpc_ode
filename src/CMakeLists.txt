@@ -1,4 +1,4 @@
-project(ODEIntegrator LANGUAGES CXX CUDA)
+project(ODEIntegrator LANGUAGES CUDA CXX)
 
 set(CMAKE_CUDA_ARCHITECTURES 75)
 

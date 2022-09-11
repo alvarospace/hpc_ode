@@ -1,6 +1,6 @@
 add_executable(testCanteraIntegrator testCanteraIntegrator.cpp)
 
-target_link_libraries(testCanteraIntegrator PRIVATE Integrators Timer)
+target_link_libraries(testCanteraIntegrator PRIVATE IntegratorsCPU Timer)
 add_custom_command(TARGET testCanteraIntegrator
     POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -12,5 +12,11 @@ add_test(NAME testCanteraIntegrator COMMAND testCanteraIntegrator)
 ##########
 
 add_executable(testCVodeIntegrator testCVodeIntegrator.cpp)
-target_link_libraries(testCVodeIntegrator PRIVATE Integrators Timer)
+target_link_libraries(testCVodeIntegrator PRIVATE IntegratorsCPU Timer)
 add_test(NAME testCVodeIntegrator COMMAND testCVodeIntegrator)
+
+#########
+
+add_executable(testCVodeIntegratorGPU testCVodeIntegratorGPU.cpp)
+target_link_libraries(testCVodeIntegratorGPU PRIVATE IntegratorsGPU Timer)
+add_test(NAME testCVodeIntegratorGPU COMMAND testCVodeIntegratorGPU)
