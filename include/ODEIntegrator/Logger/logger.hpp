@@ -13,20 +13,18 @@
 using namespace std;
 using namespace std::chrono;
 
-// TODO: Log thread id and __FILE__ and __LINE__
-
 class Logger {
     public:
-        void info(string data, string line, string file) {
-            msg_pipe("[INFO]:  ", data, line, file);
+        void info(string data, int line, string file) {
+            buildMsg("INFO:  ", data, line, file);
         }
 
-        void debug(string data, string line, string file) {
-            msg_pipe("[DEBUG]: ", data, line, file);
+        void debug(string data, int line, string file) {
+            buildMsg("DEBUG: ", data, line, file);
         }
 
-        void error(string data, string line, string file) {
-            msg_pipe("[ERROR]: ", data, line, file);
+        void error(string data, int line, string file) {
+            buildMsg("ERROR: ", data, line, file);
         }
 
         Logger();
@@ -38,7 +36,7 @@ class Logger {
 
     private:
         // Constants
-        static inline string const DFT_FMT = "%T";
+        static inline string const DFT_FMT = "%F %T";
         static inline string const EXIT_FLAG = "SIGNAL EXIT";
 
         // Member properties
@@ -46,9 +44,9 @@ class Logger {
         thread queue_worker;
         
         // Private methods
-        string time_stamp();
-        void process_queue();
-        void msg_pipe(string type, string data, string line, string file);
+        string getTimeStamp();
+        void processQueue();
+        void buildMsg(string type, string data, int line, string file);
 
     protected:
         virtual void log(string data) {
@@ -56,18 +54,20 @@ class Logger {
         }
 };
 
-void Logger::msg_pipe(string type, string data, string line, string file) {
+void Logger::buildMsg(string type, string data, int line, string file) {
+    auto path = filesystem::path(file);
     auto thread_id = this_thread::get_id();
     stringstream msg_ss;
     msg_ss 
-        << "[Thread - " << thread_id << "] " << time_stamp()
+        << "[" << thread_id << "] " << getTimeStamp()
+        << " [" << path.filename().string() << ":" << line << "] " 
         << type << data;
     log_queue.push(msg_ss.str());
 }
 
 // Start queue_worker thread
 Logger::Logger() {
-    queue_worker = thread(&Logger::process_queue, this);
+    queue_worker = thread(&Logger::processQueue, this);
 }
 
 // Wait for queue_worker to finish
@@ -76,7 +76,7 @@ Logger::~Logger() {
     queue_worker.join();
 }
 
-string Logger::time_stamp() {
+string Logger::getTimeStamp() {
     // Time stamp
     const auto now = system_clock::now();
     const auto nowAsTimeT = system_clock::to_time_t(now);
@@ -87,14 +87,14 @@ string Logger::time_stamp() {
     std::stringstream nowSs;
     nowSs
         << "[" << std::put_time(std::localtime(&nowAsTimeT), DFT_FMT.c_str())
-        << '.' << std::setfill('0') << std::setw(3) << nowMs.count() << "] ";
+        << ',' << std::setfill('0') << std::setw(3) << nowMs.count() << "]";
     return nowSs.str();
 }
 
-void Logger::process_queue() {
+void Logger::processQueue() {
     string msg;
     while (true) {
-        log_queue.wait_pop(msg);
+        log_queue.pop(msg);
         if (msg == EXIT_FLAG)
             break;
         log(msg);

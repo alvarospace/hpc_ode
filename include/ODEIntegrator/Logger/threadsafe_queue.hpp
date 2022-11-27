@@ -9,7 +9,7 @@ class ThreadSafeQueue {
     public:
         ThreadSafeQueue() {}
         void push(T item);
-        void wait_pop(T& item);
+        void pop(T& item);
 
         // Delete copy constructors
         ThreadSafeQueue(const ThreadSafeQueue&) = delete;
@@ -30,7 +30,7 @@ void ThreadSafeQueue<T>::push(T item) {
 
 // Threadsafe pop waiting the queue until it has a item available
 template<typename T>
-void ThreadSafeQueue<T>::wait_pop(T& item) {
+void ThreadSafeQueue<T>::pop(T& item) {
     std::unique_lock<std::mutex> lock(mtx);
     cond_var.wait(lock, [this] {
         return !myqueue.empty();
