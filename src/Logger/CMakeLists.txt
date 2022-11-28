@@ -1,6 +1,7 @@
 add_library(Logger STATIC
     ThreadSafeQueue.cpp
     BaseLogger.cpp
+    Logger.cpp
 )
 
 find_package(Threads REQUIRED)

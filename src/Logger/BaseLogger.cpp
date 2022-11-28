@@ -9,14 +9,8 @@
 using std::string;
 
 // Start queue_worker thread
-BaseLogger::BaseLogger() {
+BaseLogger::BaseLogger(LogLevel _logLevel) : logLevel(_logLevel) {
     queue_worker = std::thread(&BaseLogger::processQueue, this);
-}
-
-// Wait for queue_worker to finish
-BaseLogger::~BaseLogger() {
-    log_queue.push(EXIT_FLAG);
-    queue_worker.join();
 }
 
 void BaseLogger::buildMsg(string type, string data, int line, string file) {
@@ -32,10 +26,10 @@ void BaseLogger::buildMsg(string type, string data, int line, string file) {
 
 string BaseLogger::getTimeStamp() const {
     // Time stamp
-    const auto now = std::chrono::system_clock::now();
-    const auto nowAsTimeT = std::chrono::system_clock::to_time_t(now);
+    auto const now = std::chrono::system_clock::now();
+    auto const nowAsTimeT = std::chrono::system_clock::to_time_t(now);
     // Last miliseconds
-    const auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+    auto const  nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
 
     // Append the milliseconds to the time stamp(best precision in seconds)
     std::stringstream nowSs;
@@ -53,4 +47,9 @@ void BaseLogger::processQueue() {
             break;
         log(msg);
     }
+}
+
+void BaseLogger::finishWorker() {
+    log_queue.push(EXIT_FLAG);
+    queue_worker.join();
 }

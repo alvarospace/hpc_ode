@@ -1,4 +1,8 @@
+#pragma once
+
 #include <string>
+#include <filesystem>
+#include <fstream>
 
 #include "ODEIntegrator/Logger/BaseLogger.hpp"
 
@@ -14,15 +18,13 @@ class FileLogger : public BaseLogger {
         void log(std::string data) override;
 
     public:
-        FileLogger();
+        FileLogger(LogLevel _logLevel, std::string logFileName = LOGFILE);
         ~FileLogger();
 
-        // Delete copy constructors
-        FileLogger(const FileLogger&) = delete;
-        FileLogger& operator=(const FileLogger&) = delete;
-
     private:
-        std::string logFileName;
+        static inline std::string const LOGFILE = "./out/out.log";
+
+        std::ofstream fout;
 };
 
 class ConsoleLogger : public BaseLogger {
@@ -30,10 +32,6 @@ class ConsoleLogger : public BaseLogger {
         void log(std::string data) override;
 
     public:
-        ConsoleLogger();
+        ConsoleLogger(LogLevel _logLevel);
         ~ConsoleLogger();
-
-        // Delete copy constructors
-        ConsoleLogger(const ConsoleLogger&) = delete;
-        ConsoleLogger& operator=(const ConsoleLogger&) = delete;
 };
