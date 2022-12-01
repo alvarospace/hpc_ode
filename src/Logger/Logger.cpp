@@ -25,19 +25,18 @@ void ConsoleLogger::log(std::string data) {
 /**************************************************/
 
 /**************** File Logger *********************/
-FileLogger::FileLogger(LogLevel _logLevel, std::string logFileName) : BaseLogger(_logLevel) {
-    auto logPath = fs::path(logFileName);
-    auto parentPath = logPath.parent_path();
+FileLogger::FileLogger(LogLevel _logLevel, std::string logDir) : BaseLogger(_logLevel) {
+    auto logPath = fs::path(logDir);
 
     // Create directory if it does not exist
-    if (fs::exists(parentPath)){
+    if (fs::exists(logPath)){
         // Remove if the path exists and it's not a directory
-        if (!fs::is_directory(parentPath)) {
-            fs::remove_all(parentPath);
-            fs::create_directory(parentPath);
+        if (!fs::is_directory(logPath)) {
+            fs::remove_all(logPath);
+            fs::create_directory(logPath);
         }
     } else {
-        fs::create_directories(parentPath);
+        fs::create_directories(logPath);
     }
 
     // Formated TimeStamp
@@ -46,12 +45,12 @@ FileLogger::FileLogger(LogLevel _logLevel, std::string logFileName) : BaseLogger
     );
     std::stringstream logFileNameDated;
     logFileNameDated
-        << logPath.stem().string() << "_"
+        << "out" << "_"
         << std::put_time(std::localtime(&nowTimeT), "%F_%T")
-        << logPath.extension().string();
+        << ".log";
 
     // Log file dated path
-    auto targetLogFile = fs::path(parentPath) / logFileNameDated.str();
+    auto targetLogFile = fs::path(logPath) / logFileNameDated.str();
 
     fout.open(targetLogFile.string(), std::ios::out | std::ios::trunc);
     if (!fout.is_open()) {

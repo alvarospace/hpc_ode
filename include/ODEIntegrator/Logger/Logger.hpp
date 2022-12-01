@@ -10,7 +10,6 @@
 #define debug(x) debug(x, __LINE__, __FILE__)
 #define error(x) error(x, __LINE__, __FILE__)
 
-// TODO: Implement the loggers
 // TODO: research about copy constructors in derived classes
 
 class FileLogger : public BaseLogger {
@@ -18,11 +17,11 @@ class FileLogger : public BaseLogger {
         void log(std::string data) override;
 
     public:
-        FileLogger(LogLevel _logLevel, std::string logFileName = LOGFILE);
+        FileLogger(LogLevel _logLevel, std::string logDir = LOGDIR);
         ~FileLogger();
 
     private:
-        static inline std::string const LOGFILE = "./out/out.log";
+        static inline std::string const LOGDIR = "./out/";
 
         std::ofstream fout;
 };
