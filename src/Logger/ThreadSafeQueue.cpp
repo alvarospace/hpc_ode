@@ -18,3 +18,5 @@ void ThreadSafeQueue<T>::pop(T& item) {
     item = myqueue.front();
     myqueue.pop();
 }
+
+template class ThreadSafeQueue<std::string>;
