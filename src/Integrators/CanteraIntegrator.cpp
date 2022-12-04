@@ -11,8 +11,8 @@
 using std::vector;
 
 
-void CanteraIntegrator::init(IntegratorConfig config) {
-    Integrator::init(config);
+void CanteraIntegrator::init(Context ctx, IntegratorConfig config) {
+    Integrator::init(ctx, config);
     
     // Check compatibility
     auto solution = Cantera::newSolution(mechanism);
@@ -31,20 +31,18 @@ void CanteraIntegrator::init(IntegratorConfig config) {
 }
 
 void CanteraIntegrator::integrate(double t0, double t) {
-    Mesh& mesh = Mesh::get();
-
     double* temperatures = nullptr;
     double* enthalpies = nullptr;
     double* species = nullptr;
 
-    if (mesh.hasEnthalpy())
-        enthalpies = mesh.getEnthalpyPointer();
+    if (mesh->hasEnthalpy())
+        enthalpies = mesh->getEnthalpyPointer();
 
-    temperatures = mesh.getTemperaturePointer();
+    temperatures = mesh->getTemperaturePointer();
 
     for (int i = 0; i < totalSize; i++) {
-        species = mesh.getSpeciesPointer(i);
-        if (mesh.hasEnthalpy())
+        species = mesh->getSpeciesPointer(i);
+        if (mesh->hasEnthalpy())
             integrateSystem(temperatures[i], enthalpies[i], species, t);
         else
             integrateSystem(temperatures[i], species, t);

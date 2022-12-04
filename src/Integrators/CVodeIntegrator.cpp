@@ -31,8 +31,8 @@ extern "C" {
 
 using namespace std;
 
-void CVodeIntegrator::init(IntegratorConfig config) {
-    Integrator::init(config);
+void CVodeIntegrator::init(Context ctx, IntegratorConfig config) {
+    Integrator::init(ctx, config);
     uData = make_unique<UserData>();
     uData->pressure = pressure;
 
@@ -47,26 +47,25 @@ void CVodeIntegrator::init(IntegratorConfig config) {
 }
 
 void CVodeIntegrator::integrate(double t0, double t) {
-    Mesh& mesh = Mesh::get();
 
     // Systems allocation
-    vector<vector<double>> systemsData = data_transfer_from_mesh(mesh);
+    vector<vector<double>> systemsData = data_transfer_from_mesh();
 
     for (int i = 0; i < totalSize; i++) {
         integrateSystem(systemsData[i].data(), t);
     }
 
-    data_transfer_to_mesh(mesh, systemsData);
+    data_transfer_to_mesh(systemsData);
 }
 
-vector<vector<double>> CVodeIntegrator::data_transfer_from_mesh(Mesh& mesh) {
+vector<vector<double>> CVodeIntegrator::data_transfer_from_mesh() {
 
     vector<vector<double>> systemsData(totalSize, vector<double>(systemSize,0.0f));
 
-    vector<double> temperatures = mesh.getTemperatureVector();
+    vector<double> temperatures = mesh->getTemperatureVector();
     vector<double> species;
     for (int i = 0; i < totalSize; i++) {
-        species = mesh.getSpeciesVector(i);
+        species = mesh->getSpeciesVector(i);
         systemsData[i][0] = temperatures[i];
         copy(begin(species), end(species) - 1, begin(systemsData[i]) + 1);
     }
@@ -74,12 +73,12 @@ vector<vector<double>> CVodeIntegrator::data_transfer_from_mesh(Mesh& mesh) {
     return systemsData;
 }
 
-void CVodeIntegrator::data_transfer_to_mesh(Mesh& mesh, vector<vector<double>> systemsData) {
-    double* temperatures = mesh.getTemperaturePointer();
+void CVodeIntegrator::data_transfer_to_mesh(vector<vector<double>> systemsData) {
+    double* temperatures = mesh->getTemperaturePointer();
     double* species;
     for (int i = 0; i < totalSize; i++) {
         temperatures[i] = systemsData[i][0];
-        species = mesh.getSpeciesPointer(i);
+        species = mesh->getSpeciesPointer(i);
         copy(begin(systemsData[i]) + 1, end(systemsData[i]), species);
         species[systemSize - 1] = last_specie_calculation(species);
     }

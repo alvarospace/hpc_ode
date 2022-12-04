@@ -2,8 +2,6 @@
 
 #include <vector>
 
-using std::vector;
-
 struct Coords {
     double x,y,z;
 };
@@ -25,7 +23,7 @@ class Point {
 
         double getTemperature() const;
         double getEnthalpy() const;
-        vector<double> getSpecies() const;
+        std::vector<double> getSpecies() const;
         Coords getCoordinates() const;
         int numSpecies() const;
 
@@ -35,7 +33,7 @@ class Point {
 
         double temperature;
         double enthalpy;
-        vector<double> species;
+        std::vector<double> species;
         Coords coordinates;
         int nsp;
 

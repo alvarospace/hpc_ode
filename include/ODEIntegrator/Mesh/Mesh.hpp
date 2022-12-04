@@ -4,12 +4,9 @@
 
 using std::vector;
 
-// Singleton class to keep the application data
+// Class that holds the data of the execution
 class Mesh {
     public:
-        // Static method with static instace of Mesh
-        static Mesh& get();
-
         vector<double>& getTemperatureVector();
         vector<double>& getEnthalpyVector();
         vector<double>& getSpeciesVector(int index);
@@ -32,8 +29,6 @@ class Mesh {
         Mesh& operator=(Mesh const&) = delete;
     
     private:
-        // Singleton constructor is private
-        Mesh() {}
         bool isCompatible(Point const& point) const;
 
         vector<double> temperature;

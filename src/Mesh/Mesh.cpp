@@ -5,11 +5,6 @@
 
 using std::vector;
 
-Mesh& Mesh::get() {
-    static Mesh mesh;
-    return mesh;
-}
-
 vector<double>& Mesh::getTemperatureVector() {
     return temperature;
 }

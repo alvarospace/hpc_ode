@@ -10,7 +10,9 @@
 
 using namespace std;
 
-csvReader::csvReader(string _csvFilename) {
+csvReader::csvReader(string _csvFilename, std::shared_ptr<Mesh> _mesh) {
+    mesh = _mesh;
+
     string endWith {".csv"};
     if (_csvFilename.find(endWith) == string::npos) {
         stringstream ss;
@@ -38,10 +40,9 @@ void csvReader::read() {
     HeaderInfo headerInfo = inspectHeader(line);
 
     // Read all data
-    Mesh &mesh = Mesh::get();
     while ( getline(file, line) ) {
         Point newPoint = readPoint(line, headerInfo);
-        mesh.addPoint(newPoint);
+        mesh->addPoint(newPoint);
     }
     file.close();
 }
