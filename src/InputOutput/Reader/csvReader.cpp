@@ -1,12 +1,13 @@
-#include "ODEIntegrator/InputOutput/Reader/csvReader.hpp"
-#include "ODEIntegrator/Mesh/Mesh.hpp"
-#include "ODEIntegrator/Mesh/Point.hpp"
-#include "ODEIntegrator/Mesh/PointBuilder.hpp"
 #include <string>
 #include <sstream>
 #include <fstream>
 #include <stdexcept>
 #include <algorithm>
+
+#include "ODEIntegrator/InputOutput/Reader/csvReader.hpp"
+#include "ODEIntegrator/Mesh/Mesh.hpp"
+#include "ODEIntegrator/Mesh/Point.hpp"
+#include "ODEIntegrator/Mesh/PointBuilder.hpp"
 
 using namespace std;
 

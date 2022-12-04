@@ -7,6 +7,7 @@
 
 #include "ODEIntegrator/Logger/BaseLogger.hpp"
 #include "ODEIntegrator/Logger/Logger.hpp"
+#include "ODEIntegrator/Context/Context.hpp"
 
 namespace fs = std::filesystem;
 
@@ -25,19 +26,11 @@ void ConsoleLogger::log(std::string data) {
 /**************************************************/
 
 /**************** File Logger *********************/
-FileLogger::FileLogger(LogLevel _logLevel, std::string logDir) : BaseLogger(_logLevel) {
-    auto logPath = fs::path(logDir);
-
-    // Create directory if it does not exist
-    if (fs::exists(logPath)){
-        // Remove if the path exists and it's not a directory
-        if (!fs::is_directory(logPath)) {
-            fs::remove_all(logPath);
-            fs::create_directory(logPath);
-        }
-    } else {
-        fs::create_directories(logPath);
-    }
+FileLogger::FileLogger(LogLevel _logLevel, Context ctx) : BaseLogger(_logLevel) {
+    if (!ctx.isFolderReady())
+        ctx.setUpFolder();
+    
+    auto logPath = fs::path(ctx.getOutFolder());
 
     // Formated TimeStamp
     auto const nowTimeT = std::chrono::system_clock::to_time_t(
@@ -50,7 +43,7 @@ FileLogger::FileLogger(LogLevel _logLevel, std::string logDir) : BaseLogger(_log
         << ".log";
 
     // Log file dated path
-    auto targetLogFile = fs::path(logPath) / logFileNameDated.str();
+    auto targetLogFile = logPath / logFileNameDated.str();
 
     fout.open(targetLogFile.string(), std::ios::out | std::ios::trunc);
     if (!fout.is_open()) {
