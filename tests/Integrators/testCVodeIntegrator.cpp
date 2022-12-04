@@ -1,3 +1,9 @@
+#include <string>
+#include <vector>
+#include <cassert>
+#include <algorithm>
+#include <iostream>
+
 #include "ODEIntegrator/Integrators/CVodeIntegrator.hpp"
 #include "ODEIntegrator/InputOutput/Reader/csvReader.hpp"
 #include "ODEIntegrator/Mesh/Mesh.hpp"
@@ -5,47 +11,33 @@
 #include "ODEIntegrator/Integrators/CVodeIntegratorOMP.hpp"
 #include "ODEIntegrator/Timer/Timer.hpp"
 
-#include <string>
-#include <vector>
-#include <cassert>
-#include <algorithm>
-#include <iostream>
-
 using namespace std;
 
-IntegratorConfig setup(string filename, string mechanism) {
-    csvReader reader(filename);
+IntegratorConfig setup(string filename, string mechanism, shared_ptr<Mesh> mesh) {
+    csvReader reader(filename, mesh);
     reader.read();
-
-    Mesh& mesh = Mesh::get();
 
     IntegratorConfig config;
     config.reltol = 1.0e-6;
     config.abstol = 1.0e-10;
     config.mechanism = mechanism;
     config.pressure = 101325.15;
-    config.systemSize = mesh.numSpecies();
-    config.totalSize = mesh.totalSize();
 
     return config;
 }
 
-void clean() {
-    Mesh& mesh = Mesh::get();
-    mesh.clear();
-}
-
 void testCVodeIntegrator() {
-    IntegratorConfig config = setup("data/res_gri_1.csv", "gri30.yaml");
-    Mesh& mesh = Mesh::get();
+    auto mesh = make_shared<Mesh>();
+    Context ctx(mesh);
+    IntegratorConfig config = setup("data/res_gri_1.csv", "gri30.yaml", mesh);
 
-    vector<double> vin = mesh.getSpeciesVector(0);
+    vector<double> vin = mesh->getSpeciesVector(0);
 
     CVodeIntegrator integrator;
-    integrator.init(config);
+    integrator.init(ctx, config);
     integrator.integrate(0,1e-3);
 
-    vector<double> vout = mesh.getSpeciesVector(0);
+    vector<double> vout = mesh->getSpeciesVector(0);
 
     // Species comparison
     bool speciesEqual = equal(begin(vin), end(vin), begin(vout), [](double const& i, double const& j) {
@@ -54,36 +46,38 @@ void testCVodeIntegrator() {
     });
     assert(!speciesEqual);
 
-    clean();
+    mesh->clear();
 }
 
 void testCVodevsCantera() {
     string filename {"data/res_gri_1.csv"};
     string mechanism {"gri30.yaml"};
 
-    IntegratorConfig config = setup(filename, mechanism);
-    double dt = 1e-3;
-    Mesh& mesh = Mesh::get();
+    auto mesh = make_shared<Mesh>();
+    Context ctx(mesh);
 
-    double tin = mesh.getTemperatureVector()[0];
-    vector<double> vin = mesh.getSpeciesVector(0);
+    IntegratorConfig config = setup(filename, mechanism, mesh);
+    double dt = 1e-3;
+
+    double tin = mesh->getTemperatureVector()[0];
+    vector<double> vin = mesh->getSpeciesVector(0);
     
     //CVode
     CVodeIntegrator cvodeIntegrator;
-    cvodeIntegrator.init(config);
+    cvodeIntegrator.init(ctx, config);
     cvodeIntegrator.integrate(0,dt);
-    double tempCVode = mesh.getTemperatureVector()[0];
-    vector<double> voutCVode = mesh.getSpeciesVector(0);
-    clean();
+    double tempCVode = mesh->getTemperatureVector()[0];
+    vector<double> voutCVode = mesh->getSpeciesVector(0);
+    mesh->clear();
 
-    config = setup(filename, mechanism);
+    config = setup(filename, mechanism, mesh);
     //Cantera
     CanteraIntegrator canteraIntegrator;
-    cvodeIntegrator.init(config);
+    cvodeIntegrator.init(ctx, config);
     cvodeIntegrator.integrate(0,dt);
-    double tempCantera = mesh.getTemperatureVector()[0];
-    vector<double> voutCantera = mesh.getSpeciesVector(0);
-    clean();
+    double tempCantera = mesh->getTemperatureVector()[0];
+    vector<double> voutCantera = mesh->getSpeciesVector(0);
+    mesh->clear();
 
     // Species comparison
     bool speciesEqual = equal(begin(voutCVode), end(voutCVode), begin(voutCantera), [](double const& i, double const& j) {
@@ -99,29 +93,30 @@ void testSerialvsOMP() {
     double dt = 1e-3;
     Timer serialTimer, OMPTimer;
 
-    Mesh& mesh = Mesh::get();
+    auto mesh = make_shared<Mesh>();
+    Context ctx(mesh);
 
-    IntegratorConfig config = setup(filename, mechanism);
+    IntegratorConfig config = setup(filename, mechanism, mesh);
 
     // Serial
     serialTimer.tic();
     CVodeIntegrator serialIntegrator;
-    serialIntegrator.init(config);
+    serialIntegrator.init(ctx, config);
     serialIntegrator.integrate(0,dt);
     serialTimer.toc();
-    vector<double> voutSerial = mesh.getSpeciesVector(0);
-    clean();
+    vector<double> voutSerial = mesh->getSpeciesVector(0);
+    mesh->clear();
 
-    config = setup(filename, mechanism);
+    config = setup(filename, mechanism, mesh);
 
     // OMP
     OMPTimer.tic();
     CVodeIntegratorOMP OMPIntegrator;
-    OMPIntegrator.init(config);
+    OMPIntegrator.init(ctx, config);
     OMPIntegrator.integrate(0, dt);
     OMPTimer.toc();
-    vector<double> voutOMP = mesh.getSpeciesVector(0);
-    clean();
+    vector<double> voutOMP = mesh->getSpeciesVector(0);
+    mesh->clear();
 
     bool speciesEqual = equal(begin(voutSerial), end(voutSerial), begin(voutOMP), [](double const& i, double const& j) {
         double const err = 1e-70;

@@ -7,6 +7,8 @@ using std::vector;
 // Class that holds the data of the execution
 class Mesh {
     public:
+        Mesh() {}
+        
         vector<double>& getTemperatureVector();
         vector<double>& getEnthalpyVector();
         vector<double>& getSpeciesVector(int index);

@@ -1,48 +1,42 @@
+#include <algorithm>
+#include <vector>
+#include <iostream>
+#include <cassert>
+#include <memory>
+
+#include "ODEIntegrator/Context/Context.hpp"
 #include "ODEIntegrator/Integrators/CanteraIntegrator.hpp"
 #include "ODEIntegrator/InputOutput/Reader/csvReader.hpp"
 #include "ODEIntegrator/Mesh/Mesh.hpp"
 #include "ODEIntegrator/Timer/Timer.hpp"
 
-#include <algorithm>
-#include <vector>
-#include <iostream>
-#include <cassert>
-
 using namespace std;
 
-IntegratorConfig setup(string filename, string mechanism) {
-    csvReader reader(filename);
+IntegratorConfig setup(string filename, string mechanism, shared_ptr<Mesh> mesh) {
+    csvReader reader(filename, mesh);
     reader.read();
-
-    Mesh& mesh = Mesh::get();
 
     IntegratorConfig config;
     config.reltol = 1.0e-6;
     config.abstol = 1.0e-10;
     config.mechanism = mechanism;
     config.pressure = 101325.15;
-    config.systemSize = mesh.numSpecies();
-    config.totalSize = mesh.totalSize();
 
     return config;
 }
 
-void clean() {
-    Mesh& mesh = Mesh::get();
-    mesh.clear();
-}
-
 void testCanteraIntegrator(string filename, string mechanism) {
-    IntegratorConfig config = setup(filename, mechanism);
+    auto mesh = make_shared<Mesh>();
+    Context ctx(mesh);
+    IntegratorConfig config = setup(filename, mechanism, mesh);
 
-    Mesh& mesh = Mesh::get();
-    vector<double> vin = mesh.getSpeciesVector(0);
+    vector<double> vin = mesh->getSpeciesVector(0);
 
     CanteraIntegrator integrator;
-    integrator.init(config);
+    integrator.init(ctx, config);
     integrator.integrate(0, 1e-3);
     
-    vector<double> vout = mesh.getSpeciesVector(0);
+    vector<double> vout = mesh->getSpeciesVector(0);
 
     // Species comparison
     bool speciesEqual = equal(begin(vin), end(vin), begin(vout), [](double const& i, double const& j) {
@@ -51,36 +45,37 @@ void testCanteraIntegrator(string filename, string mechanism) {
     });
     assert(!speciesEqual);
 
-    clean();
+    mesh->clear();
 }
 
 void testSerialvsOMP(string filename, string mechanism) {
     Timer serialTimer, OMPTimer;
-    Mesh& mesh = Mesh::get();
+    auto mesh = make_shared<Mesh>();
+    Context ctx(mesh);
     double dt = 1e-3;
     
     // Serial
-    IntegratorConfig config = setup(filename, mechanism);
+    IntegratorConfig config = setup(filename, mechanism, mesh);
     serialTimer.tic();
 
     CanteraIntegrator serialIntegrator;
-    serialIntegrator.init(config);
+    serialIntegrator.init(ctx, config);
     serialIntegrator.integrate(0, dt);
 
     serialTimer.toc();
-    vector<double> vSerial = mesh.getSpeciesVector(50);
-    clean();
+    vector<double> vSerial = mesh->getSpeciesVector(50);
+    mesh->clear();
 
     // OMP
-    config = setup(filename, mechanism);
+    config = setup(filename, mechanism, mesh);
     OMPTimer.tic();
 
     CanteraIntegratorOMP OMPIntegrator;
-    OMPIntegrator.init(config);
+    OMPIntegrator.init(ctx, config);
     OMPIntegrator.integrate(0, dt);
 
     OMPTimer.toc();
-    vector<double> vOMP = mesh.getSpeciesVector(50);
+    vector<double> vOMP = mesh->getSpeciesVector(50);
 
     assert(serialTimer.getTime() > OMPTimer.getTime());
     cout << serialTimer.getTime() << endl;
@@ -93,7 +88,7 @@ void testSerialvsOMP(string filename, string mechanism) {
     });
     assert(speciesEqual);
 
-    clean();
+    mesh->clear();
 } 
 
 int main() {

@@ -1,11 +1,13 @@
-#include "ODEIntegrator/Mesh/Mesh.hpp"
-#include "ODEIntegrator/Mesh/Point.hpp"
-#include "ODEIntegrator/Mesh/PointBuilder.hpp"
 #include <cassert>
 #include <array>
 #include <stdexcept>
 #include <algorithm>
 #include <iostream>
+#include <memory>
+
+#include "ODEIntegrator/Mesh/Mesh.hpp"
+#include "ODEIntegrator/Mesh/Point.hpp"
+#include "ODEIntegrator/Mesh/PointBuilder.hpp"
 
 using namespace std;
 
@@ -40,63 +42,61 @@ void testAddPointAndClearMesh() {
     // Add 3 points to the mesh
     array<int,3> range {0, 1, 2};
 
-    Mesh &mesh = Mesh::get();
+    auto mesh = std::make_shared<Mesh>();
     for (auto const& i : range) {
         Point point = createPoint();
-        mesh.addPoint(point);
+        mesh->addPoint(point);
     }
 
-    assert(mesh.totalSize() == 3);
-    mesh.clear();
-    assert(mesh.totalSize() == 0);
+    assert(mesh->totalSize() == 3);
+    mesh->clear();
+    assert(mesh->totalSize() == 0);
 }
 
 void testOutOfIndexAccessToMesh() {
     // Add 3 points to the mesh
     array<int,3> range {0, 1, 2};
 
-    Mesh &mesh = Mesh::get();
+    auto mesh = std::make_shared<Mesh>();
     for (auto const& i : range) {
         Point point = createPoint();
-        mesh.addPoint(point);
+        mesh->addPoint(point);
     }
 
-    vector<double> v1 = mesh.getSpeciesVector(1);
+    vector<double> v1 = mesh->getSpeciesVector(1);
     string const expectedMsg = "vector::_M_range_check: __n (which is 4) >= this->size() (which is 3)";
     try {
-        vector<double> v4 = mesh.getSpeciesVector(4);
+        vector<double> v4 = mesh->getSpeciesVector(4);
     } catch (out_of_range const &e) {
         string const errorMsg = e.what();
         assert(errorMsg == expectedMsg);
     }
     
-    mesh.clear();
+    mesh->clear();
 }
 
 void testAddBadPointToMesh() {
     string const expectedMsg = "Trying to add an incompatible Point to Mesh";
-    Mesh &mesh = Mesh::get();
-    mesh.clear();
+    auto mesh = std::make_shared<Mesh>();
+    mesh->clear();
     Point badPoint = createBadPoint();
     try {
-        mesh.addPoint(badPoint);
+        mesh->addPoint(badPoint);
     } catch (exception const &e) {
         string const errorMsg = e.what();
         assert(errorMsg == expectedMsg);
     }
-    assert(mesh.totalSize() == 0);
+    assert(mesh->totalSize() == 0);
 }
 
-void addPointToMesh() {
-    Mesh &mesh = Mesh::get();
+void addPointToMesh(std::shared_ptr<Mesh> mesh) {
     Point point = createPoint();
-    mesh.addPoint(point);
+    mesh->addPoint(point);
 }
 
-void alterVectorState() {
-    Mesh &mesh = Mesh::get();
-    int nsp = mesh.numSpecies();
-    double* firstVector = mesh.getSpeciesPointer(0);
+void alterVectorState(std::shared_ptr<Mesh> mesh) {
+    int nsp = mesh->numSpecies();
+    double* firstVector = mesh->getSpeciesPointer(0);
     
     for (int i = 0; i < nsp; i++) {
         firstVector[i] = 0.0;
@@ -104,20 +104,20 @@ void alterVectorState() {
 }
 
 void testMeshState() {
-    addPointToMesh();
-    Mesh &mesh = Mesh::get();
+    auto mesh = std::make_shared<Mesh>();
+    addPointToMesh(mesh);
     Point point = createPoint();
-    mesh.addPoint(point);
-    assert(mesh.totalSize() == 2);
+    mesh->addPoint(point);
+    assert(mesh->totalSize() == 2);
 
     // Check changed state
-    alterVectorState();
-    vector firstVector = mesh.getSpeciesVector(0);
+    alterVectorState(mesh);
+    vector firstVector = mesh->getSpeciesVector(0);
     for_each(begin(firstVector), end(firstVector), [](double const &elem){
         assert(elem == 0);
     });
 
-    mesh.clear();
+    mesh->clear();
 }
 
 int main() {

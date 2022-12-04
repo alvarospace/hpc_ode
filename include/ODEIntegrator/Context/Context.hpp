@@ -13,6 +13,11 @@ class Context {
             mesh = std::make_shared<Mesh>();
         }
 
+        Context(std::shared_ptr<Mesh> _mesh) {
+            logger = std::make_shared<ConsoleLogger>(LogLevel::INFO);
+            mesh = _mesh;
+        }
+
         Context(std::shared_ptr<BaseLogger> _logger, std::shared_ptr<Mesh> _mesh) {
             logger = _logger;
             mesh = _mesh;

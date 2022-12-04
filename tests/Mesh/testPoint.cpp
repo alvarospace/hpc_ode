@@ -1,7 +1,8 @@
-#include "ODEIntegrator/Mesh/Point.hpp"
-#include "ODEIntegrator/Mesh/PointBuilder.hpp"
 #include <string>
 #include <cassert>
+
+#include "ODEIntegrator/Mesh/Point.hpp"
+#include "ODEIntegrator/Mesh/PointBuilder.hpp"
 
 using namespace std;
 
