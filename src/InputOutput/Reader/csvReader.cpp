@@ -18,6 +18,7 @@ csvReader::csvReader(std::shared_ptr<Context> _ctx, std::string _csvFilename)
         stringstream ss;
         ss << "Input file should end with '.csv', actual: ";
         ss << _csvFilename;
+        logger->error(ss.str());
         throw invalid_argument(ss.str());
     }
     csvFilename = _csvFilename;
@@ -25,16 +26,18 @@ csvReader::csvReader(std::shared_ptr<Context> _ctx, std::string _csvFilename)
 }
 
 void csvReader::read() {
+    stringstream ss;
+
     // Open csv file
     ifstream file(csvFilename);
     if (!file.is_open()) {
-        stringstream ss;
-        ss << "Failing opening file: ";
+        ss << "Failing opening input file: ";
         ss << csvFilename;
+        logger->error(ss.str());
         throw runtime_error(ss.str());
+        ss.clear();
     }
 
-    stringstream ss;
     ss << "Reading file: \"" << csvFilename << "\"";
     logger->info(ss.str());
     ss.clear();

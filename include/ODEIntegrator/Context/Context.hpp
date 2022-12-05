@@ -11,9 +11,6 @@
 #include "ODEIntegrator/Mesh/Mesh.hpp"
 #include "ODEIntegrator/Context/OutFileService.hpp"
 
-namespace fs = std::filesystem;
-
-// TODO: Setup folder on constructor
 class Context {
     public:
         // Default context

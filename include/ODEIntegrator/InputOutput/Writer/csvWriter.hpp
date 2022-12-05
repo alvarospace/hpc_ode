@@ -2,6 +2,7 @@
 
 #include <string>
 #include <memory>
+#include <fstream>
 
 #include "ODEIntegrator/Context/Context.hpp"
 #include "ODEIntegrator/InputOutput/Writer/Writer.hpp"
@@ -14,4 +15,7 @@ class csvWriter : public Writer {
 
     private:
         std::string csvFilename;
+
+        void writeHeader(std::ofstream& file);
+        void writePoint(std::ofstream& file, int const index);
 };
