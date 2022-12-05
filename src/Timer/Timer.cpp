@@ -1,6 +1,6 @@
-#include "ODEIntegrator/Timer/Timer.hpp"
-
 #include <chrono>
+
+#include "ODEIntegrator/Timer/Timer.hpp"
 
 void Timer::tic() {
     t1 = std::chrono::steady_clock::now();

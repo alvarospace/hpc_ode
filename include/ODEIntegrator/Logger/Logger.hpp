@@ -4,8 +4,8 @@
 #include <filesystem>
 #include <fstream>
 
-#include "ODEIntegrator/Context/Context.hpp"
 #include "ODEIntegrator/Logger/BaseLogger.hpp"
+#include "ODEIntegrator/Context/OutFileService.hpp"
 
 #define info(x) info(x, __LINE__, __FILE__)
 #define debug(x) debug(x, __LINE__, __FILE__)
@@ -16,8 +16,7 @@ class FileLogger : public BaseLogger {
         void log(std::string data) override;
 
     public:
-        // TODO: remove context from logger
-        FileLogger(LogLevel _logLevel, Context ctx);
+        FileLogger(LogLevel _logLevel, std::shared_ptr<OutFileService> fileService);
         ~FileLogger();
 
     private:

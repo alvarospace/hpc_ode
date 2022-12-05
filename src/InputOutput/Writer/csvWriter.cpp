@@ -8,11 +8,8 @@
 
 using namespace std;
 
-// TODO: Remove context from logger
-csvWriter::csvWriter(string _csvFilename, Context _ctx) {
-    ctx = _ctx;
-    mesh = ctx.getMesh();
-
+csvWriter::csvWriter(shared_ptr<Context> _ctx, string _csvFilename)
+: Writer(_ctx) {
     string endWith {".csv"};
     if (_csvFilename.find(endWith) == string::npos) {
         stringstream ss;
@@ -21,4 +18,5 @@ csvWriter::csvWriter(string _csvFilename, Context _ctx) {
         throw invalid_argument(ss.str());
     }
     csvFilename = _csvFilename;
+    logger->info("csvWriter created");
 }

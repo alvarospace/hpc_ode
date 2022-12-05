@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "ODEIntegrator/Context/Context.hpp"
+#include "ODEIntegrator/Context/OutFileService.hpp"
 #include "ODEIntegrator/Integrators/CanteraIntegrator.hpp"
 #include "ODEIntegrator/InputOutput/Reader/csvReader.hpp"
 #include "ODEIntegrator/Mesh/Mesh.hpp"
@@ -12,8 +13,8 @@
 
 using namespace std;
 
-IntegratorConfig setup(string filename, string mechanism, shared_ptr<Mesh> mesh) {
-    csvReader reader(filename, mesh);
+IntegratorConfig setup(string filename, string mechanism, shared_ptr<Context> ctx) {
+    csvReader reader(ctx, filename);
     reader.read();
 
     IntegratorConfig config;
@@ -26,9 +27,10 @@ IntegratorConfig setup(string filename, string mechanism, shared_ptr<Mesh> mesh)
 }
 
 void testCanteraIntegrator(string filename, string mechanism) {
-    auto mesh = make_shared<Mesh>();
-    Context ctx(mesh);
-    IntegratorConfig config = setup(filename, mechanism, mesh);
+    auto fileService = std::make_shared<OutFileService>();
+    auto mesh = std::make_shared<Mesh>();
+    auto ctx = std::make_shared<Context>(fileService, mesh);
+    IntegratorConfig config = setup(filename, mechanism, ctx);
 
     vector<double> vin = mesh->getSpeciesVector(0);
 
@@ -50,12 +52,13 @@ void testCanteraIntegrator(string filename, string mechanism) {
 
 void testSerialvsOMP(string filename, string mechanism) {
     Timer serialTimer, OMPTimer;
-    auto mesh = make_shared<Mesh>();
-    Context ctx(mesh);
+    auto fileService = std::make_shared<OutFileService>();
+    auto mesh = std::make_shared<Mesh>();
+    auto ctx = std::make_shared<Context>(fileService, mesh);
     double dt = 1e-3;
     
     // Serial
-    IntegratorConfig config = setup(filename, mechanism, mesh);
+    IntegratorConfig config = setup(filename, mechanism, ctx);
     serialTimer.tic();
 
     CanteraIntegrator serialIntegrator;
@@ -67,7 +70,7 @@ void testSerialvsOMP(string filename, string mechanism) {
     mesh->clear();
 
     // OMP
-    config = setup(filename, mechanism, mesh);
+    config = setup(filename, mechanism, ctx);
     OMPTimer.tic();
 
     CanteraIntegratorOMP OMPIntegrator;

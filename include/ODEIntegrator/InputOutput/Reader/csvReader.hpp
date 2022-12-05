@@ -3,16 +3,14 @@
 #include <string>
 #include <memory>
 
+#include "ODEIntegrator/Context/Context.hpp"
 #include "ODEIntegrator/InputOutput/Reader/Reader.hpp"
 #include "ODEIntegrator/Mesh/Mesh.hpp"
 #include "ODEIntegrator/Mesh/Point.hpp"
 
-
 class csvReader : public Reader {
     private:
         std::string csvFilename;
-        std::shared_ptr<Mesh> mesh;
-
 
         struct HeaderInfo {
             int nsp {};
@@ -26,7 +24,7 @@ class csvReader : public Reader {
         Point readPoint(std::string line, HeaderInfo headerInfo);
     
     public:
-        csvReader(std::string _csvFilename, std::shared_ptr<Mesh> _mesh);
+        csvReader(std::shared_ptr<Context> _ctx, std::string _csvFilename);
         
         void read() override;
 };

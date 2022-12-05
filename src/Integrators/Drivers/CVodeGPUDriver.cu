@@ -1,6 +1,8 @@
-#include "ODEIntegrator/Integrators/Drivers/CVodeGPUDriver.cuh"
+//#include "ODEIntegrator/Integrators/Drivers/CVodeGPUDriver.cuh"
 
 #include "Mechanism/GPU/header.cuh"
+
+#include "cuda_runtime.h"
 
 #include <iostream>
 
@@ -190,5 +192,6 @@ void free_memory_gpu(mechanism_memory *pyjac_mem) {
     }
 
 }
+
 
 

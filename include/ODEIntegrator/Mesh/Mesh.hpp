@@ -1,19 +1,19 @@
 #pragma once
-#include "ODEIntegrator/Mesh/Point.hpp"
+
 #include <vector>
 
-using std::vector;
+#include "ODEIntegrator/Mesh/Point.hpp"
 
 // Class that holds the data of the execution
 class Mesh {
     public:
         Mesh() {}
         
-        vector<double>& getTemperatureVector();
-        vector<double>& getEnthalpyVector();
-        vector<double>& getSpeciesVector(int index);
-        vector<vector<double>>& getSpeciesMatrix();
-        vector<Coords>& getCoordinatesVector();
+        std::vector<double>& getTemperatureVector();
+        std::vector<double>& getEnthalpyVector();
+        std::vector<double>& getSpeciesVector(int index);
+        std::vector<std::vector<double>>& getSpeciesMatrix();
+        std::vector<Coords>& getCoordinatesVector();
 
         double* getTemperaturePointer();
         double* getEnthalpyPointer();
@@ -33,10 +33,10 @@ class Mesh {
     private:
         bool isCompatible(Point const& point) const;
 
-        vector<double> temperature;
-        vector<double> enthalpy;
-        vector<vector<double>> speciesMatrix;
-        vector<Coords> coordinates;
+        std::vector<double> temperature;
+        std::vector<double> enthalpy;
+        std::vector<std::vector<double>> speciesMatrix;
+        std::vector<Coords> coordinates;
 
         int nsp {0};
         bool enthalpyFlag {false};

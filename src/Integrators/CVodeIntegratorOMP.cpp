@@ -1,7 +1,9 @@
+#include <vector>
+
 #include "ODEIntegrator/Integrators/CVodeIntegratorOMP.hpp"
 #include "ODEIntegrator/Mesh/Mesh.hpp"
 
-#include <vector>
+using std::vector;
 
 void CVodeIntegratorOMP::integrate(double t0, double t) {
     // Systems allocation

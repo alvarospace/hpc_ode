@@ -13,8 +13,8 @@
 
 using namespace std;
 
-IntegratorConfig setup(string filename, string mechanism, shared_ptr<Mesh> mesh) {
-    csvReader reader(filename, mesh);
+IntegratorConfig setup(string filename, string mechanism, shared_ptr<Context> ctx) {
+    csvReader reader(ctx, filename);
     reader.read();
 
     IntegratorConfig config;
@@ -27,9 +27,10 @@ IntegratorConfig setup(string filename, string mechanism, shared_ptr<Mesh> mesh)
 }
 
 void testCVodeIntegrator() {
-    auto mesh = make_shared<Mesh>();
-    Context ctx(mesh);
-    IntegratorConfig config = setup("data/res_gri_1.csv", "gri30.yaml", mesh);
+    auto fileService = std::make_shared<OutFileService>();
+    auto mesh = std::make_shared<Mesh>();
+    auto ctx = std::make_shared<Context>(fileService, mesh);
+    IntegratorConfig config = setup("data/res_gri_1.csv", "gri30.yaml", ctx);
 
     vector<double> vin = mesh->getSpeciesVector(0);
 
@@ -53,10 +54,11 @@ void testCVodevsCantera() {
     string filename {"data/res_gri_1.csv"};
     string mechanism {"gri30.yaml"};
 
-    auto mesh = make_shared<Mesh>();
-    Context ctx(mesh);
+    auto fileService = std::make_shared<OutFileService>();
+    auto mesh = std::make_shared<Mesh>();
+    auto ctx = std::make_shared<Context>(fileService, mesh);
 
-    IntegratorConfig config = setup(filename, mechanism, mesh);
+    IntegratorConfig config = setup(filename, mechanism, ctx);
     double dt = 1e-3;
 
     double tin = mesh->getTemperatureVector()[0];
@@ -70,7 +72,7 @@ void testCVodevsCantera() {
     vector<double> voutCVode = mesh->getSpeciesVector(0);
     mesh->clear();
 
-    config = setup(filename, mechanism, mesh);
+    config = setup(filename, mechanism, ctx);
     //Cantera
     CanteraIntegrator canteraIntegrator;
     cvodeIntegrator.init(ctx, config);
@@ -93,10 +95,11 @@ void testSerialvsOMP() {
     double dt = 1e-3;
     Timer serialTimer, OMPTimer;
 
-    auto mesh = make_shared<Mesh>();
-    Context ctx(mesh);
+    auto fileService = std::make_shared<OutFileService>();
+    auto mesh = std::make_shared<Mesh>();
+    auto ctx = std::make_shared<Context>(fileService, mesh);
 
-    IntegratorConfig config = setup(filename, mechanism, mesh);
+    IntegratorConfig config = setup(filename, mechanism, ctx);
 
     // Serial
     serialTimer.tic();
@@ -107,7 +110,7 @@ void testSerialvsOMP() {
     vector<double> voutSerial = mesh->getSpeciesVector(0);
     mesh->clear();
 
-    config = setup(filename, mechanism, mesh);
+    config = setup(filename, mechanism, ctx);
 
     // OMP
     OMPTimer.tic();

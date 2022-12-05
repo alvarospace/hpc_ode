@@ -1,18 +1,17 @@
+#include <vector>
+#include <stdexcept>
+#include <sstream>
+
 #include "ODEIntegrator/Integrators/Integrator.hpp"
 #include "ODEIntegrator/Integrators/CanteraIntegrator.hpp"
 #include "ODEIntegrator/Mesh/Mesh.hpp"
 #include "cantera/thermo.h"
 #include "cantera/zerodim.h"
 
-#include <vector>
-#include <stdexcept>
-#include <sstream>
-
 using std::vector;
 
-
-void CanteraIntegrator::init(Context ctx, IntegratorConfig config) {
-    Integrator::init(ctx, config);
+void CanteraIntegrator::init(std::shared_ptr<Context> _ctx, IntegratorConfig config) {
+    Integrator::init(_ctx, config);
     
     // Check compatibility
     auto solution = Cantera::newSolution(mechanism);

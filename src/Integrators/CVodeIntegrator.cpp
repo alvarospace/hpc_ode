@@ -31,8 +31,8 @@ extern "C" {
 
 using namespace std;
 
-void CVodeIntegrator::init(Context ctx, IntegratorConfig config) {
-    Integrator::init(ctx, config);
+void CVodeIntegrator::init(std::shared_ptr<Context> _ctx, IntegratorConfig config) {
+    Integrator::init(_ctx, config);
     uData = make_unique<UserData>();
     uData->pressure = pressure;
 

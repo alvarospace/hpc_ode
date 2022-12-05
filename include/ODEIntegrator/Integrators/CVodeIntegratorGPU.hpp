@@ -5,7 +5,7 @@
 
 class CVodeIntegratorGPU : public CVodeIntegrator {
     public:
-        void init(Context ctx, IntegratorConfig config) override;
+        void init(std::shared_ptr<Context> _ctx, IntegratorConfig config) override;
         void integrate(double t0, double t) override;
         void clean() override;
         dydt_driver dydt_func() override;

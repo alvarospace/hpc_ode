@@ -17,9 +17,10 @@ struct IntegratorConfig {
 //Abstract class that every integrator should inherit
 class Integrator {
     public:
-        virtual void init(Context ctx, IntegratorConfig config) {
-            logger = ctx.getLogger();
-            mesh = ctx.getMesh();
+        virtual void init(std::shared_ptr<Context> _ctx, IntegratorConfig config) {
+            ctx = _ctx;
+            logger = ctx->getLogger();
+            mesh = ctx->getMesh();
             totalSize = mesh->totalSize();
             systemSize = mesh->numSpecies();
 
@@ -36,6 +37,7 @@ class Integrator {
         int systemSize;
         std::shared_ptr<Mesh> mesh;
         std::shared_ptr<BaseLogger> logger;
+        std::shared_ptr<Context> ctx;
 
         std::string mechanism;
         double reltol;

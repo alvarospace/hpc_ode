@@ -9,13 +9,9 @@
 
 class csvWriter : public Writer {
     public:
-        csvWriter(std::string _csvFilename, Context _ctx);
+        csvWriter(std::shared_ptr<Context> _ctx, std::string _csvFilename);
         void write() override;
 
     private:
-        Context ctx;
         std::string csvFilename;
-        std::shared_ptr<Mesh> mesh;
-
-        // std::string parsePoint()
 };

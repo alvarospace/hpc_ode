@@ -11,9 +11,8 @@
 
 using namespace std;
 
-csvReader::csvReader(string _csvFilename, std::shared_ptr<Mesh> _mesh) {
-    mesh = _mesh;
-
+csvReader::csvReader(std::shared_ptr<Context> _ctx, std::string _csvFilename)
+: Reader(_ctx) {
     string endWith {".csv"};
     if (_csvFilename.find(endWith) == string::npos) {
         stringstream ss;
@@ -22,6 +21,7 @@ csvReader::csvReader(string _csvFilename, std::shared_ptr<Mesh> _mesh) {
         throw invalid_argument(ss.str());
     }
     csvFilename = _csvFilename;
+    logger->info("csvReader created");
 }
 
 void csvReader::read() {
@@ -34,11 +34,22 @@ void csvReader::read() {
         throw runtime_error(ss.str());
     }
 
+    stringstream ss;
+    ss << "Reading file: \"" << csvFilename << "\"";
+    logger->info(ss.str());
+    ss.clear();
+
     // First line is the header
     // necessary to inspect the expected data
     string line;
     getline(file, line);
     HeaderInfo headerInfo = inspectHeader(line);
+    ss << "NSP: " << headerInfo.nsp
+       << "Temperature: " << headerInfo.hasTemperature << "\n"
+       << "Coordenates: " << headerInfo.hasCoords << "\n"
+       << "Enthalpy: "    << headerInfo.hasEnthalpy << "\n";
+    logger->debug(ss.str());
+    ss.clear();
 
     // Read all data
     while ( getline(file, line) ) {
@@ -46,6 +57,7 @@ void csvReader::read() {
         mesh->addPoint(newPoint);
     }
     file.close();
+    logger->info("Read completed");
 }
 
 csvReader::HeaderInfo csvReader::inspectHeader(string header) {

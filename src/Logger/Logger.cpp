@@ -5,9 +5,10 @@
 #include <chrono>
 #include <stdexcept>
 
+
 #include "ODEIntegrator/Logger/BaseLogger.hpp"
 #include "ODEIntegrator/Logger/Logger.hpp"
-#include "ODEIntegrator/Context/Context.hpp"
+#include "ODEIntegrator/Context/OutFileService.hpp"
 
 namespace fs = std::filesystem;
 
@@ -26,24 +27,15 @@ void ConsoleLogger::log(std::string data) {
 /**************************************************/
 
 /**************** File Logger *********************/
-FileLogger::FileLogger(LogLevel _logLevel, Context ctx) : BaseLogger(_logLevel) {
-    if (!ctx.isFolderReady())
-        ctx.setUpFolder();
-    
-    auto logPath = fs::path(ctx.getOutFolder());
+FileLogger::FileLogger(LogLevel _logLevel, std::shared_ptr<OutFileService> fileService) : BaseLogger(_logLevel) {
+    fs::path logPath(fileService->getExecutionFolder());
 
     // Formated TimeStamp
     auto const nowTimeT = std::chrono::system_clock::to_time_t(
         std::chrono::system_clock::now()
     );
-    std::stringstream logFileNameDated;
-    logFileNameDated
-        << "out" << "_"
-        << std::put_time(std::localtime(&nowTimeT), "%F_%T")
-        << ".log";
 
-    // Log file dated path
-    auto targetLogFile = logPath / logFileNameDated.str();
+    auto targetLogFile = logPath / "out.log";
 
     fout.open(targetLogFile.string(), std::ios::out | std::ios::trunc);
     if (!fout.is_open()) {
