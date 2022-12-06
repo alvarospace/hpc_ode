@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iomanip>
 #include <vector>
+#include <filesystem>
 
 #include "ODEIntegrator/InputOutput/Writer/csvWriter.hpp"
 #include "ODEIntegrator/Mesh/Mesh.hpp"
@@ -29,18 +30,20 @@ void csvWriter::write() {
     stringstream ss;
 
     // Open file in write mode
-    ofstream file(csvFilename);
+    filesystem::path outPath(ctx->fileService->getExecutionFolder());
+    outPath /= csvFilename;
+    ofstream file(outPath.string());
     if (!file.is_open()) {
         ss << "Failing opening output file: ";
-        ss << csvFilename;
+        ss << outPath;
         logger->error(ss.str());
         throw runtime_error(ss.str());
-        ss.clear();
+        ss.str(string());
     }
 
-    ss << "Writing file: \"" << csvFilename << "\"";
+    ss << "Writing file: " << outPath;
     logger->info(ss.str());
-    ss.clear();
+    ss.str(string());
 
     // Write header
     writeHeader(file);

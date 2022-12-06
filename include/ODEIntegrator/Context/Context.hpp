@@ -26,6 +26,12 @@ class Context {
             mesh = _mesh;
         }
 
+        Context(std::shared_ptr<OutFileService> _fileService, std::shared_ptr<BaseLogger> _logger) {
+            fileService = _fileService;
+            logger = _logger;
+            mesh = std::make_shared<Mesh>();
+        }
+
         Context(std::shared_ptr<OutFileService> _fileService, std::shared_ptr<BaseLogger> _logger, std::shared_ptr<Mesh> _mesh) {
             fileService = _fileService;
             logger = _logger;

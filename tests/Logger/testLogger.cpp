@@ -38,7 +38,6 @@ void testFileLoggerConcurrency() {
         lines++;
     }
     log_file.close();
-    fs::remove_all(logPath.parent_path());
 
     // Num lines must be 20
     assert(lines == 20);

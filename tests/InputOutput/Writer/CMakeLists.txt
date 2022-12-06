@@ -1,5 +1,5 @@
 add_executable(testCsvWriter testCsvWriter.cpp)
-target_link_libraries(testCsvWriter PRIVATE Writer)
+target_link_libraries(testCsvWriter PRIVATE Reader Writer)
 
 add_custom_command(TARGET testCsvWriter 
     POST_BUILD

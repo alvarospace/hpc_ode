@@ -33,7 +33,7 @@ void testReadBadFile() {
 }
 
 void testReadNotExistingFile() {
-    string const expectedMsg = "Failing opening file: data/nothing.csv";
+    string const expectedMsg = "Failing opening input file: data/nothing.csv";
     auto fileService = std::make_shared<OutFileService>();
     auto mesh = std::make_shared<Mesh>();
     auto ctx = std::make_shared<Context>(fileService, mesh);

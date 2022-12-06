@@ -35,30 +35,33 @@ void csvReader::read() {
         ss << csvFilename;
         logger->error(ss.str());
         throw runtime_error(ss.str());
-        ss.clear();
+        ss.str(string());
     }
 
     ss << "Reading file: \"" << csvFilename << "\"";
     logger->info(ss.str());
-    ss.clear();
+    ss.str(string());
 
     // First line is the header
     // necessary to inspect the expected data
     string line;
     getline(file, line);
     HeaderInfo headerInfo = inspectHeader(line);
-    ss << "NSP: " << headerInfo.nsp
-       << "Temperature: " << headerInfo.hasTemperature << "\n"
-       << "Coordenates: " << headerInfo.hasCoords << "\n"
-       << "Enthalpy: "    << headerInfo.hasEnthalpy << "\n";
+    ss << boolalpha;
+    ss << "{ NSP: " << headerInfo.nsp << ", "
+       << "Temperature: " << headerInfo.hasTemperature << ", "
+       << "Coordinates: " << headerInfo.hasCoords << ", "
+       << "Enthalpy: "    << headerInfo.hasEnthalpy << " }";
     logger->debug(ss.str());
-    ss.clear();
+    ss.str(string());
 
     // Read all data
     while ( getline(file, line) ) {
         Point newPoint = readPoint(line, headerInfo);
         mesh->addPoint(newPoint);
     }
+    ss << "Number of systems: " << mesh->totalSize();
+    logger->debug(ss.str());
     file.close();
     logger->info("Read completed");
 }
