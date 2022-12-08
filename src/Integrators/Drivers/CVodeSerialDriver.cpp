@@ -18,7 +18,7 @@ extern "C" {
 int dydt_cvode_serial(double t, N_Vector y, N_Vector ydot, void* userdata) {
     double* yptr = N_VGetArrayPointer(y);
     double* ydotptr = N_VGetArrayPointer(ydot);
-    CVodeIntegrator::UserData* udata = static_cast<CVodeIntegrator::UserData*>(userdata);
+    UserData* udata = static_cast<UserData*>(userdata);
 
     dydt(t, udata->pressure, yptr, ydotptr);
 
@@ -28,7 +28,7 @@ int dydt_cvode_serial(double t, N_Vector y, N_Vector ydot, void* userdata) {
 int jacobian_cvode_serial(double t, N_Vector y, N_Vector ydot, SUNMatrix J, void* userdata, N_Vector tmp1, N_Vector tmp2, N_Vector tmp3) {
     double* yptr = N_VGetArrayPointer(y);
     double* Jptr = SM_DATA_D(J);
-    CVodeIntegrator::UserData* udata = static_cast<CVodeIntegrator::UserData*>(userdata);
+    UserData* udata = static_cast<UserData*>(userdata);
 
     eval_jacob(t, udata->pressure, yptr, Jptr);
 

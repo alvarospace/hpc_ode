@@ -25,8 +25,10 @@ void CanteraIntegrator::init(std::shared_ptr<Context> _ctx, IntegratorConfig con
         ss << "mechanism size of: " << mechanism;
         ss << " (" << nsp << ")";
         ss << " differs from the mesh size: " << systemSize;
-        throw std::logic_error(ss.str());
+        logger->error(ss.str());
+        throw std::runtime_error(ss.str());
     }
+    logger->info("CanteraIntegrator initialized");
 }
 
 void CanteraIntegrator::integrate(double t0, double t) {

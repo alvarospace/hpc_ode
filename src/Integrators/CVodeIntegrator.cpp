@@ -1,3 +1,10 @@
+#include <sstream>
+#include <vector>
+#include <algorithm>
+#include <iostream>
+#include <memory>
+#include <stdexcept>
+
 #include "ODEIntegrator/Integrators/CVodeIntegrator.hpp"
 #include "ODEIntegrator/Mesh/Mesh.hpp"
 #include "ODEIntegrator/Integrators/Drivers/CVodeSerialDriver.hpp"
@@ -13,7 +20,7 @@
 #include "sunmatrix/sunmatrix_dense.h"
 #include "sunlinsol/sunlinsol_dense.h"
 
-// // C code from mechanism
+// C code from mechanism
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -21,13 +28,6 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-
-#include <sstream>
-#include <vector>
-#include <algorithm>
-#include <iostream>
-#include <memory>
-#include <stdexcept>
 
 using namespace std;
 
@@ -42,8 +42,10 @@ void CVodeIntegrator::init(std::shared_ptr<Context> _ctx, IntegratorConfig confi
         ss << "mechanism size of: " << mechanism;
         ss << " (" << NSP << ")";
         ss << " differs from the mesh size: " << systemSize;
-        throw std::logic_error(ss.str());
+        logger->error(ss.str());
+        throw std::runtime_error(ss.str());
     }
+    logger->info("CVodeIntegrator initialized");
 }
 
 void CVodeIntegrator::integrate(double t0, double t) {
@@ -142,8 +144,7 @@ void CVodeIntegrator::integrateSystem(double* system, double dt) {
         copy(yptr, yptr + systemSize, system);
         
     } catch (runtime_error const& e) {
-        // TODO: print this message with the logger
-        cout << e.what() << endl;
+        logger->error(e.what());
     }
 
     CVodeFree(&cvode_mem);
