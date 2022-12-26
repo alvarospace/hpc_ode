@@ -31,10 +31,11 @@ extern "C" {
 
 using namespace std;
 
-void CVodeIntegrator::init(std::shared_ptr<Context> _ctx, IntegratorConfig config) {
-    Integrator::init(_ctx, config);
+void CVodeIntegrator::init(std::shared_ptr<Context> ctx, IntegratorConfig config) {
+    Integrator::init(ctx, config);
     uData = make_unique<UserData>();
     uData->pressure = pressure;
+
 
     // Check compatibility with the mechanism
     if (systemSize != NSP) {

@@ -8,15 +8,11 @@
 #include "ODEIntegrator/Integrators/Integrator.hpp"
 #include "ODEIntegrator/Integrators/MechanismDriver.hpp"
 #include "ODEIntegrator/Mesh/Mesh.hpp"
-
-struct UserData {
-    std::shared_ptr<Context> ctx;
-    double pressure;
-};
+#include "ODEIntegrator/Integrators/CVodeDataModels.hpp"
 
 class CVodeIntegrator : public Integrator, public MechanismDriver {
     public:
-        virtual void init(std::shared_ptr<Context> _ctx, IntegratorConfig config) override;
+        virtual void init(std::shared_ptr<Context> ctx, IntegratorConfig config) override;
         virtual void integrate(double t0, double t) override;
         virtual void clean() override {}
         virtual dydt_driver dydt_func() override;

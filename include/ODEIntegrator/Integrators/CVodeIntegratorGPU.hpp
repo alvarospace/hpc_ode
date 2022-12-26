@@ -4,13 +4,7 @@
 
 #include "ODEIntegrator/Integrators/CVodeIntegrator.hpp"
 #include "ODEIntegrator/Integrators/Drivers/CVodeGPUDriver.cuh"
-#include "Mechanism/GPU/mechanism.cuh"
-
-struct GPUUserData {
-    std::shared_ptr<Context> ctx;
-    double pressure;
-    std::unique_ptr<mechanism_memory> pyjac_mem;
-};
+#include "ODEIntegrator/Integrators/CVodeDataModels.hpp"
 
 class CVodeIntegratorGPU : public CVodeIntegrator {
     public:
@@ -20,12 +14,10 @@ class CVodeIntegratorGPU : public CVodeIntegrator {
         dydt_driver dydt_func() override;
         jacobian_driver jacobian_func() override;
 
-
-
     private:
-        void integrateBatch();
-
-        void initMemoryGPU(int num_systems);
+        void integrateBatch(double dt, int processed_systems, int systems_to_process, int padded);
+        void setGPUArrayInitialConditions(double *yptr, int processed_systems, int systems_to_process);
+        void saveGPUArrayResults(double *yptr, int processed_systems, int systems_to_process);
 
         std::unique_ptr<GPUUserData> uData;
 };

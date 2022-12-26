@@ -6,7 +6,7 @@
 
 #include "ODEIntegrator/Context/Context.hpp"
 #include "ODEIntegrator/Integrators/Drivers/CVodeGPUDriver.cuh"
-
+#include "ODEIntegrator/Integrators/CVodeDataModels.hpp"
 #include "Mechanism/GPU/gpu_memory.cuh"
 
 
@@ -14,6 +14,43 @@
 #define BLOCKSIZE 32
 // Max GPU memory allocation by PyJac
 #define MAX_GPU_MEM_PYJAC 0.8
+
+// TODO: Complete the GPU integrator and test
+int dydt_cvode(realtype t, N_Vector y, N_Vector ydot, void* userData)
+{
+  GPUUserData* uData = (GPUUserData*) userData;
+  realtype *yptr, *ydotptr, *yptrPy, *ydotptrPy;
+
+  yptr = N_VGetDeviceArrayPointer(y);
+  ydotptr = N_VGetDeviceArrayPointer(ydot);
+
+  yptrPy = uData->pyjac_mem->y;
+  ydotptrPy = uData->pyjac_mem->dy;
+
+  mechanism_memory pyjac_mem = *(uData->pyjac_mem);
+
+  // Each GPU thread evaluate 1 dydt system
+  size_t nBlocks = (int) ceil( ((float) uData->nSystems) / BLOCKSIZE );
+  dim3 dimGrid ( nBlocks );
+  dim3 dimBlock ( BLOCKSIZE );
+
+  /* Kernel Call */
+  kernel_dydt<<< dimGrid, dimBlock >>>(uData->nSystems, t, uData->Pressure, yptr, ydotptr, yptrPy, ydotptrPy, pyjac_mem);
+  cudaDeviceSynchronize();
+
+  #ifdef TESTING
+  //uData->test_y_sun_vs_py->ysun_vs_ypyjac();
+  //uData->test_y_sun_vs_py->ysun_vs_dypyjac();
+  #endif
+
+  cudaError_t cudaErr = cudaGetLastError();
+  if (cudaErr != cudaSuccess) {
+    fprintf(stderr, "\t ERROR in 'dydt_cvode': cudaGetLastError returned %s", cudaGetErrorName(cudaErr));
+    return -1;
+  }
+
+  return 0;
+}
 
 
 int calc_gpu_points(std::shared_ptr<Context> ctx, int total_points, int &real_calculated_points) {
