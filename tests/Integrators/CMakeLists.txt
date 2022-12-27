@@ -18,5 +18,6 @@ add_test(NAME testCVodeIntegrator COMMAND testCVodeIntegrator)
 #########
 
 add_executable(testCVodeIntegratorGPU testCVodeIntegratorGPU.cpp)
-target_link_libraries(testCVodeIntegratorGPU PRIVATE IntegratorsGPU Timer)
+# TODO: Problema de colisión de nombres con CPU y GPU, ¿Cómo se soluciona?
+target_link_libraries(testCVodeIntegratorGPU PRIVATE IntegratorsGPU IntegratorsCPU Timer)
 add_test(NAME testCVodeIntegratorGPU COMMAND testCVodeIntegratorGPU)

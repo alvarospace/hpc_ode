@@ -6,11 +6,6 @@
 #include "Mechanism/GPU/mechanism.cuh"
 #include "sundials/sundials_types.h"
 
-struct UserData {
-    std::shared_ptr<Context> ctx;
-    double pressure;
-};
-
 struct GPUUserData {
     std::shared_ptr<Context> ctx;
     double pressure;

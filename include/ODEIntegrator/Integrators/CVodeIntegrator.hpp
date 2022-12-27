@@ -8,7 +8,7 @@
 #include "ODEIntegrator/Integrators/Integrator.hpp"
 #include "ODEIntegrator/Integrators/MechanismDriver.hpp"
 #include "ODEIntegrator/Mesh/Mesh.hpp"
-#include "ODEIntegrator/Integrators/CVodeDataModels.hpp"
+#include "ODEIntegrator/Integrators/CVodeCPUDataModels.hpp"
 
 class CVodeIntegrator : public Integrator, public MechanismDriver {
     public:

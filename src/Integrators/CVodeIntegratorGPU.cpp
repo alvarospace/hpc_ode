@@ -5,7 +5,7 @@
 #include "ODEIntegrator/Integrators/MechanismDriver.hpp"
 #include "ODEIntegrator/Integrators/CVodeIntegratorGPU.hpp"
 #include "ODEIntegrator/Integrators/Drivers/CVodeGPUDriver.cuh"
-#include "ODEIntegrator/Integrators/CVodeDataModels.hpp"
+#include "ODEIntegrator/Integrators/CVodeGPUDataModels.hpp"
 #include "Mechanism/GPU/mechanism.cuh"
 
 #include "sundials/sundials_nvector.h"
@@ -159,6 +159,26 @@ void CVodeIntegratorGPU::saveGPUArrayResults(double *yptr, int processed_systems
     }
 }
 
+void CVodeIntegratorGPU::check_return_value(void* returnValue, std::string const funcName, int const opt) {
+    int* retVal;
+    std::stringstream ss;
+    if (opt == 0 && returnValue == NULL) {
+        ss << "SUNDIALS ERROR: " << funcName << "() failed - returned NULL pointer";
+        throw std::runtime_error(ss.str());
+
+    } else if (opt == 1) {
+        retVal = static_cast<int*>(returnValue);
+        if (*retVal < 0) {
+            ss << "SUNDIALS ERROR: " << funcName << "() failed with returned value = " << *retVal;
+            throw std::runtime_error(ss.str());
+        }
+
+    } else if (opt == 2 && returnValue == NULL) {
+        ss << "MEMORY ERROR " << funcName << "() failed- - returned NULL pointer";
+        throw std::runtime_error(ss.str()); 
+    }
+}
+
 dydt_driver CVodeIntegratorGPU::dydt_func() {
     return dydt_cvode_GPU;
 }
@@ -166,3 +186,4 @@ dydt_driver CVodeIntegratorGPU::dydt_func() {
 jacobian_driver CVodeIntegratorGPU::jacobian_func() {
     return jacobian_cvode_GPU;
 }
+

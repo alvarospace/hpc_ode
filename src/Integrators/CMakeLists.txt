@@ -29,13 +29,15 @@ add_library(IntegratorsGPU STATIC
     Drivers/CVodeGPUDriver.cu
 )
 
-add_dependencies(IntegratorsGPU SundialsProject)
+add_dependencies(IntegratorsGPU SundialsProject MagmaProject)
 
 target_link_directories(IntegratorsGPU PUBLIC ${SUNDIALS_LIB_DIR})
 
-target_link_libraries(IntegratorsGPU PUBLIC Mesh Reader mechanismGPU sundials_cvode.a)
+target_link_libraries(IntegratorsGPU PUBLIC Mesh Reader mechanismGPU sundials_cvode.a sundials_nveccuda.a sundials_sunlinsolmagmadense.so sundials_sunmatrixmagmadense.so)
 
 target_include_directories(IntegratorsGPU PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(IntegratorsGPU PUBLIC ${SUNDIALS_INCLUDE_DIR})
 target_include_directories(IntegratorsGPU PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_include_directories(IntegratorsGPU PUBLIC ${MAGMA_INCLUDE_DIR})
+
+set_target_properties(IntegratorsGPU PROPERTIES CUDA_SEPARABLE_COMPILATION ON)

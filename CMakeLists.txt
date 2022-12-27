@@ -40,6 +40,7 @@ ExternalProject_Add(MagmaProject
         -DGPU_TARGET=${GPU_TARGET}
         -DMAGMA_ENABLE_CUDA=ON
         -DMAGMA_ENABLE_HIP=OFF
+        # -DBUILD_SHARED_LIBS=OFF
         -DUSE_FORTRAN=ON
 )
 set(MAGMA_LIB_DIR ${EXT_INSTALL_DIR}/magma/lib)
@@ -72,6 +73,7 @@ ExternalProject_Add(SundialsProject
         -DENABLE_LAPACK=ON
         -DENABLE_MAGMA=ON
         -DMAGMA_DIR=${EXT_INSTALL_DIR}/magma
+        -DSUNDIALS_MAGMA_BACKENDS=CUDA
         -DSUNDIALS_INDEX_SIZE=32
         -DENABLE_OPENMP=ON
         -DENABLE_PTHREAD=ON

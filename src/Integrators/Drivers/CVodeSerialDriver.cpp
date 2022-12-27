@@ -1,5 +1,6 @@
 #include "ODEIntegrator/Integrators/Drivers/CVodeSerialDriver.hpp"
 #include "ODEIntegrator/Integrators/CVodeIntegrator.hpp"
+#include "ODEIntegrator/Integrators/CVodeCPUDataModels.hpp"
 
 #include "nvector/nvector_serial.h"
 #include "sunmatrix/sunmatrix_dense.h"
