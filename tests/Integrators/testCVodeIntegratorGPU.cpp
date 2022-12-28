@@ -1,4 +1,5 @@
 #include <string>
+#include <sstream>
 #include <memory>
 #include <algorithm>
 
@@ -7,7 +8,7 @@
 #include "ODEIntegrator/Timer/Timer.hpp"
 #include "ODEIntegrator/InputOutput/Reader/csvReader.hpp"
 #include "ODEIntegrator/Integrators/CVodeIntegratorGPU.hpp"
-// #include "ODEIntegrator/Integrators/CVodeIntegrator.hpp"
+#include "ODEIntegrator/Integrators/CVodeIntegrator.hpp"
 
 using namespace std;
 
@@ -33,20 +34,21 @@ void testSerialvsGPU() {
     auto fileService = make_shared<OutFileService>();
     auto ctx = std::make_shared<Context>(fileService);
     auto mesh = ctx->getMesh();
+    auto logger = ctx->getLogger();
 
     IntegratorConfig config = setup(FILENAME, MECHANISM, ctx);
 
     // Serial
-    // serialTimer.tic();
-    // CVodeIntegrator serialIntegrator;
-    // serialIntegrator.init(ctx, config);
-    // serialIntegrator.integrate(0,dt);
-    // serialTimer.toc();
-    // vector<double> voutSerial = mesh->getSpeciesVector(0);
-    // mesh->clear();
+    serialTimer.tic();
+    CVodeIntegrator serialIntegrator;
+    serialIntegrator.init(ctx, config);
+    serialIntegrator.integrate(0,dt);
+    serialTimer.toc();
+    vector<double> voutSerial = mesh->getSpeciesVector(0);
+    mesh->clear();
 
     // GPU
-    // config = setup(FILENAME, MECHANISM, ctx);
+    config = setup(FILENAME, MECHANISM, ctx);
 
     GPUTimer.tic();
     CVodeIntegratorGPU GPUIntegrator;
@@ -56,12 +58,16 @@ void testSerialvsGPU() {
     vector<double> voutGPU = mesh->getSpeciesVector(0);
     mesh->clear();
 
-    // // Compare
-    // bool speciesEqual = equal(begin(voutSerial), end(voutSerial), begin(voutGPU), [](double const& i, double const& j) {
-    //     double const err = 1e-70;
-    //     return abs(i - j) <= err;
-    // });
-    // assert(speciesEqual);
+    // Compare
+    bool speciesEqual = equal(begin(voutSerial), end(voutSerial), begin(voutGPU), [&](double const& i, double const& j) {
+        double const err = 1e-60;
+        double res = abs(i - j);
+        stringstream ss;
+        ss << "Error GPU vs CPU: " << res;
+        logger->info(ss.str());
+        return abs(i - j) <= err;
+    });
+    assert(speciesEqual);
 }
 
 int main() {

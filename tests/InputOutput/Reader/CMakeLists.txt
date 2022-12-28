@@ -1,5 +1,5 @@
 add_executable(testCsvReader testCsvReader.cpp)
-target_link_libraries(testCsvReader PRIVATE Reader)
+target_link_libraries(testCsvReader PRIVATE Logger Mesh Reader)
 
 add_custom_command(TARGET testCsvReader 
     POST_BUILD

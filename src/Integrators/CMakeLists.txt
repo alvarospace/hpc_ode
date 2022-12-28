@@ -1,5 +1,5 @@
 # CPU
-add_library(IntegratorsCPU STATIC 
+add_library(IntegratorsCPU OBJECT 
     CanteraIntegrator.cpp
     CanteraIntegratorOMP.cpp
     CVodeIntegrator.cpp
@@ -15,7 +15,7 @@ add_dependencies(IntegratorsCPU CanteraProject SundialsProject)
 target_link_directories(IntegratorsCPU PUBLIC ${CANTERA_LIB_DIR})
 target_link_directories(IntegratorsCPU PUBLIC ${SUNDIALS_LIB_DIR})
 
-target_link_libraries(IntegratorsCPU PUBLIC Logger Mesh Reader mechanismCPU cantera fmt yaml-cpp Threads::Threads OpenMP::OpenMP_CXX sundials_cvode.a)
+target_link_libraries(IntegratorsCPU PUBLIC Logger Mesh mechanismCPU cantera sundials_cvodes fmt yaml-cpp Threads::Threads OpenMP::OpenMP_CXX)
 
 target_include_directories(IntegratorsCPU PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(IntegratorsCPU PUBLIC ${CANTERA_INCLUDE_DIR})
@@ -24,7 +24,7 @@ target_include_directories(IntegratorsCPU PUBLIC ${CMAKE_SOURCE_DIR}/src)
 
 
 # GPU
-add_library(IntegratorsGPU STATIC
+add_library(IntegratorsGPU OBJECT
     CVodeIntegratorGPU.cpp
     Drivers/CVodeGPUDriver.cu
 )
@@ -32,8 +32,9 @@ add_library(IntegratorsGPU STATIC
 add_dependencies(IntegratorsGPU SundialsProject MagmaProject)
 
 target_link_directories(IntegratorsGPU PUBLIC ${SUNDIALS_LIB_DIR})
+target_link_directories(IntegratorsGPU PUBLIC ${MAGMA_LIB_DIR})
 
-target_link_libraries(IntegratorsGPU PUBLIC Mesh Reader mechanismGPU sundials_cvode.a sundials_nveccuda.a sundials_sunlinsolmagmadense.so sundials_sunmatrixmagmadense.so)
+target_link_libraries(IntegratorsGPU PUBLIC Logger Mesh mechanismGPU sundials_cvode sundials_nveccuda sundials_sunlinsolmagmadense sundials_sunmatrixmagmadense magma)
 
 target_include_directories(IntegratorsGPU PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_include_directories(IntegratorsGPU PUBLIC ${SUNDIALS_INCLUDE_DIR})

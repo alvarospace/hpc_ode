@@ -9,17 +9,6 @@ include(ExternalProject)
 set(EXT_DIR ${CMAKE_SOURCE_DIR}/ext)
 set(EXT_INSTALL_DIR ${CMAKE_SOURCE_DIR}/ext_install CACHE PATH "Path where dependencies will be installed")
 
-# Cantera v2.6.0
-set(CANTERA_PREFIX ${EXT_INSTALL_DIR}/cantera)
-ExternalProject_Add(CanteraProject
-    SOURCE_DIR ${EXT_DIR}/cantera
-    BUILD_IN_SOURCE 1
-    CONFIGURE_COMMAND  ""
-    BUILD_COMMAND scons build prefix=${CANTERA_PREFIX} python_package=none
-    INSTALL_COMMAND scons install
-)
-set(CANTERA_LIB_DIR ${CANTERA_PREFIX}/lib)
-set(CANTERA_INCLUDE_DIR ${CANTERA_PREFIX}/include)
 
 # Cuda Samples
 ExternalProject_Add(cuda-samplesProject
@@ -40,7 +29,7 @@ ExternalProject_Add(MagmaProject
         -DGPU_TARGET=${GPU_TARGET}
         -DMAGMA_ENABLE_CUDA=ON
         -DMAGMA_ENABLE_HIP=OFF
-        # -DBUILD_SHARED_LIBS=OFF
+        -DBUILD_SHARED_LIBS=ON
         -DUSE_FORTRAN=ON
 )
 set(MAGMA_LIB_DIR ${EXT_INSTALL_DIR}/magma/lib)
@@ -66,6 +55,7 @@ ExternalProject_Add(SundialsProject
         -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
         -DCMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER}
         -DENABLE_CUDA=ON
+        -DCMAKE_CUDA_ARCHITECTURES=80
         -DCUDA_TOOLKIT_ROOT_DIR=${CUDA_TOOLKIT_ROOT_DIR}
         -DEXAMPLES_ENABLE_C=ON
         -DEXAMPLES_ENABLE_CXX=ON
@@ -79,9 +69,23 @@ ExternalProject_Add(SundialsProject
         -DENABLE_PTHREAD=ON
         -DSUNDIALS_BUILD_WITH_PROFILING=ON
         -DSUNDIALS_LOGGING_LEVEL=4
+        -DBUILD_SHARED_LIBS=ON
 )
 set(SUNDIALS_LIB_DIR ${EXT_INSTALL_DIR}/sundials/lib)
 set(SUNDIALS_INCLUDE_DIR ${EXT_INSTALL_DIR}/sundials/include)
+
+# Cantera v2.6.0
+set(CANTERA_PREFIX ${EXT_INSTALL_DIR}/cantera)
+ExternalProject_Add(CanteraProject
+    SOURCE_DIR ${EXT_DIR}/cantera
+    DEPENDS SundialsProject
+    BUILD_IN_SOURCE 1
+    CONFIGURE_COMMAND  ""
+    BUILD_COMMAND scons build prefix=${CANTERA_PREFIX} python_package=none sundials_include=${SUNDIALS_INCLUDE_DIR} sundials_libdir=${SUNDIALS_LIB_DIR}
+    INSTALL_COMMAND scons install
+)
+set(CANTERA_LIB_DIR ${CANTERA_PREFIX}/lib)
+set(CANTERA_INCLUDE_DIR ${CANTERA_PREFIX}/include)
 
 ########### MAIN PROJECT #########
 

@@ -1,6 +1,6 @@
 add_executable(testCanteraIntegrator testCanteraIntegrator.cpp)
 
-target_link_libraries(testCanteraIntegrator PRIVATE IntegratorsCPU Timer)
+target_link_libraries(testCanteraIntegrator PRIVATE Mesh Logger Timer Reader IntegratorsCPU)
 add_custom_command(TARGET testCanteraIntegrator
     POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -12,12 +12,12 @@ add_test(NAME testCanteraIntegrator COMMAND testCanteraIntegrator)
 ##########
 
 add_executable(testCVodeIntegrator testCVodeIntegrator.cpp)
-target_link_libraries(testCVodeIntegrator PRIVATE IntegratorsCPU Timer)
+target_link_libraries(testCVodeIntegrator PRIVATE Mesh Logger Timer Reader IntegratorsCPU)
 add_test(NAME testCVodeIntegrator COMMAND testCVodeIntegrator)
 
 #########
 
 add_executable(testCVodeIntegratorGPU testCVodeIntegratorGPU.cpp)
 # TODO: Problema de colisión de nombres con CPU y GPU, ¿Cómo se soluciona?
-target_link_libraries(testCVodeIntegratorGPU PRIVATE IntegratorsGPU IntegratorsCPU Timer)
+target_link_libraries(testCVodeIntegratorGPU PRIVATE Mesh Logger Timer Reader Writer IntegratorsGPU IntegratorsCPU)
 add_test(NAME testCVodeIntegratorGPU COMMAND testCVodeIntegratorGPU)

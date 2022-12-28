@@ -1,6 +1,6 @@
 project(ODEIntegrator LANGUAGES CUDA CXX)
 
-set(CMAKE_CUDA_ARCHITECTURES 75)
+set(CMAKE_CUDA_ARCHITECTURES 80)
 
 add_subdirectory(Logger)
 add_subdirectory(Timer)
