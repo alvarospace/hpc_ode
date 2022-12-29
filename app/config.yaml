@@ -1,0 +1,11 @@
+reader: csv
+  filename: /home/almousa/TFM/hpc_cvode/ref_data/res_gri_32.csv # Only for file readers
+writer: csv
+  filename: result.csv
+integrator:
+  type: cantera # cvode
+  processing: serial # omp | gpu
+    cpus: 10 # only for omp
+logger:
+  type: file
+  logLevel: INFO

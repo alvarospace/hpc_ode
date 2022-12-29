@@ -18,5 +18,5 @@ add_test(NAME testCVodeIntegrator COMMAND testCVodeIntegrator)
 #########
 
 add_executable(testCVodeIntegratorGPU testCVodeIntegratorGPU.cpp)
-target_link_libraries(testCVodeIntegratorGPU PRIVATE Mesh Logger Timer Reader Writer IntegratorsGPU IntegratorsCPU)
+target_link_libraries(testCVodeIntegratorGPU PRIVATE Mesh Logger Timer Reader IntegratorsGPU IntegratorsCPU)
 add_test(NAME testCVodeIntegratorGPU COMMAND testCVodeIntegratorGPU)

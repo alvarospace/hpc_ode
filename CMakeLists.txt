@@ -90,6 +90,7 @@ set(CANTERA_INCLUDE_DIR ${CANTERA_PREFIX}/include)
 ########### MAIN PROJECT #########
 
 add_subdirectory(src)
+add_subdirectory(app)
 
 ############ TESTS ##########
 include(CTest)
