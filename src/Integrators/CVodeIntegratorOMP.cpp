@@ -5,6 +5,12 @@
 
 using std::vector;
 
+// TODO: Call omp runtime config
+void CVodeIntegratorOMP::init(std::shared_ptr<Context> ctx, IntegratorConfig config) {
+    CVodeIntegrator::init(ctx, config);
+    logger->info("CVodeIntegratorOMP initialized");
+}
+
 void CVodeIntegratorOMP::integrate(double t0, double t) {
     // Systems allocation
     vector<vector<double>> systemsData = data_transfer_from_mesh();

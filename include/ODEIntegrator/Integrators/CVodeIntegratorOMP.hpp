@@ -6,6 +6,7 @@
 
 class CVodeIntegratorOMP : public CVodeIntegrator {
     public:
+        void init(std::shared_ptr<Context> ctx, IntegratorConfig config) override;
         void integrate(double t0, double t) override;
     
     private:

@@ -8,7 +8,11 @@ writer:
     filename: result.csv
 integrator:
     type: CanteraIntegrator
-    cpus: 10 # only for omp
+    omp:
+        cpus: 10
+        schedule:
+            type: static
+            chunk: 1
     mechanism: gri30.yaml
     reltol: 1.0e-6
     abstol: 1.0e-10

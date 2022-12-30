@@ -3,6 +3,7 @@
 #include <memory>
 #include <unordered_map>
 #include <stdexcept>
+#include <filesystem>
 
 #include "yaml-cpp/yaml.h"
 
@@ -10,7 +11,6 @@
 
 using namespace std;
 
-// TODO: Finish the factory
 class ODEIntegratorFactory {
     public:
         ODEIntegratorFactory(YAML::Node _config): config(_config) {}
@@ -20,6 +20,41 @@ class ODEIntegratorFactory {
             shared_ptr<BaseLogger> logger = createLogger(outFileService);
             return make_shared<Context>(outFileService, logger);
         }
+
+        unique_ptr<Reader> createReader(shared_ptr<Context> ctx) const {
+            string readerType = config["reader"]["type"].as<string>();
+            if (readerType == "csvReader") {
+                string inputCsvFile = config["reader"]["filename"].as<string>();
+                return make_unique<csvReader>(ctx, inputCsvFile);
+            }
+            throw runtime_error("Reader type is not valid");
+        }
+
+        unique_ptr<Writer> createWriter(shared_ptr<Context> ctx) const {
+            string writerType = config["writer"]["type"].as<string>();
+            if (writerType == "csvWriter") {
+                string outputCsvFile = config["writer"]["filename"].as<string>();
+                return make_unique<csvWriter>(ctx, outputCsvFile);
+            }
+            throw runtime_error("Writer type is not valid");
+        }
+
+        unique_ptr<Integrator> createIntegrator() const {
+            string integratorType = config["integrator"]["type"].as<string>();
+            if (integratorType == "CanteraIntegrator") {
+                return make_unique<CanteraIntegrator>();
+            } else if (integratorType == "CanteraIntegratorOMP") {
+                return make_unique<CanteraIntegratorOMP>();
+            } else if (integratorType == "CVodeIntegrator") {
+                return make_unique<CVodeIntegrator>();
+            } else if (integratorType == "CVodeIntegratorOMP") {
+                return make_unique<CVodeIntegratorOMP>();
+            } else if (integratorType == "CVodeIntegratorGPU") {
+                return make_unique<CVodeIntegratorGPU>();
+            }
+            throw runtime_error("Integrator type is not valid");
+        }
+
 
     private:
         YAML::Node config;
@@ -48,17 +83,67 @@ class ODEIntegratorFactory {
                 return make_shared<ConsoleLogger>(logLevel);
             
             throw runtime_error("Logger type is not valid");
-        }      
+        }
 };
 
 void runODEApplication(string configFileName) {
-    YAML::Node config = YAML::LoadFile("/home/almousa/TFM/hpc_cvode/app/config.yaml");
+    YAML::Node config = YAML::LoadFile(configFileName);
+    
+    // Timers
+    Timer readTimer, writeTimer, integrateTimer, totalTimer;
+
+    // Start total timer
+    totalTimer.tic();
 
     ODEIntegratorFactory factory(config);
 
     shared_ptr<Context> ctx = factory.createContext();
     shared_ptr<BaseLogger> logger = ctx->getLogger();
     logger->info("Starting ODEApplication...");
+
+    // Save execution config.yaml
+    shared_ptr<OutFileService> outFileService = ctx->getOutFileService();
+    string outPath = outFileService->getExecutionFolder();
+    filesystem::path fromFile(configFileName);
+    filesystem::path toFile(outPath);
+    toFile /= "config.yaml";
+    logger->info("Copying config.yaml to evidences");
+    filesystem::copy_file(fromFile, toFile);
+
+    // Read data
+    readTimer.tic();
+    unique_ptr<Reader> reader = factory.createReader(ctx);
+    reader->read();
+    readTimer.toc();
+
+    // Integrator
+    integrateTimer.tic();
+    IntegratorConfig integratorConfig;
+    integratorConfig.reltol = config["integrator"]["reltol"].as<double>();
+    integratorConfig.abstol = config["integrator"]["abstol"].as<double>();
+    integratorConfig.mechanism = config["integrator"]["mechanism"].as<string>();
+    integratorConfig.pressure = config["integrator"]["pressure"].as<double>();
+    integratorConfig.ompConfig = config["integrator"]["omp"];
+    double dt = config["integrator"]["dt"].as<double>();
+    unique_ptr<Integrator> integrator = factory.createIntegrator();
+
+    integrator->init(ctx, integratorConfig);
+    integrator->integrate(0.0, dt);
+    integrateTimer.toc();
+
+    // Writer
+    writeTimer.tic();
+    unique_ptr<Writer> writer = factory.createWriter(ctx);
+    writer->write();
+    writeTimer.toc();
+
+    integrator->clean();
+
+    // End total timer
+    totalTimer.toc();
+
+    // TODO: Write the performance.yaml file with the times
+    logger->info("End of ODEApplication execution");
 }
 
 void usage(string programName) {

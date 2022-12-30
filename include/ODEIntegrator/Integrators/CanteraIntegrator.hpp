@@ -5,7 +5,7 @@
 
 class CanteraIntegrator : public Integrator {
     public:
-        void init(std::shared_ptr<Context> _ctx, IntegratorConfig config) override;
+        virtual void init(std::shared_ptr<Context> _ctx, IntegratorConfig config) override;
         virtual void integrate(double t0, double t) override;
         void clean() override {}
 
@@ -16,5 +16,6 @@ class CanteraIntegrator : public Integrator {
 
 class CanteraIntegratorOMP : public CanteraIntegrator {
     public:
+        void init(std::shared_ptr<Context> _ctx, IntegratorConfig config) override;
         void integrate(double t0, double t) override;
 };

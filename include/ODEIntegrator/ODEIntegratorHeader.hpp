@@ -21,3 +21,6 @@
 // Writers
 #include "ODEIntegrator/InputOutput/Writer/Writer.hpp"
 #include "ODEIntegrator/InputOutput/Writer/csvWriter.hpp"
+
+// Timer
+#include "ODEIntegrator/Timer/Timer.hpp"

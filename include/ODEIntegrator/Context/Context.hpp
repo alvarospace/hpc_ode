@@ -46,16 +46,20 @@ class Context {
             mesh = _mesh;
         }
 
-        std::shared_ptr<BaseLogger> getLogger() {
+        std::shared_ptr<BaseLogger> getLogger() const {
             return logger;
         }
 
-        std::shared_ptr<Mesh> getMesh() {
+        std::shared_ptr<Mesh> getMesh() const {
             return mesh;
         }
 
+        std::shared_ptr<OutFileService> getOutFileService() const {
+            return fileService;
+        }
+
         std::shared_ptr<OutFileService> fileService;
-    
+
     private:
         std::shared_ptr<BaseLogger> logger;
         std::shared_ptr<Mesh> mesh;

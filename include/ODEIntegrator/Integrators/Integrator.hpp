@@ -2,6 +2,9 @@
 
 #include <string>
 #include <memory>
+#include <sstream>
+
+#include "yaml-cpp/yaml.h"
 
 #include "ODEIntegrator/Mesh/Mesh.hpp"
 #include "ODEIntegrator/Logger/Logger.hpp"
@@ -12,6 +15,7 @@ struct IntegratorConfig {
     double reltol;
     double abstol;
     double pressure;
+    YAML::Node ompConfig;
 };
 
 //Abstract class that every integrator should inherit
@@ -28,6 +32,15 @@ class Integrator {
             reltol = config.reltol;
             abstol = config.abstol;
             pressure = config.pressure;
+            ompConfig = config.ompConfig;
+
+            logger->info("Initializing integrator...");
+            std::stringstream ss;
+            ss << "{ mechanism: " << mechanism << ", "
+               << "reltol: " << reltol << ", "
+               << "abstol: " << abstol << ", "
+               << "pressure: " << pressure << " }";
+            logger->info(ss.str());
         }
         virtual void integrate(double t0, double t) = 0;
         virtual void clean() = 0;
@@ -43,4 +56,5 @@ class Integrator {
         double reltol;
         double abstol;
         double pressure;
+        YAML::Node ompConfig;
 };
