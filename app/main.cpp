@@ -1,99 +1,24 @@
 #include <string>
+#include <sstream>
 #include <iostream>
 #include <memory>
 #include <unordered_map>
 #include <stdexcept>
 #include <filesystem>
+#include <fstream>
 
 #include "yaml-cpp/yaml.h"
 
 #include "ODEIntegrator/ODEIntegratorHeader.hpp"
+#include "ODEIntegrator/ODEIntegratorFactory.hpp"
 
 using namespace std;
-
-class ODEIntegratorFactory {
-    public:
-        ODEIntegratorFactory(YAML::Node _config): config(_config) {}
-
-        shared_ptr<Context> createContext() const {
-            shared_ptr<OutFileService> outFileService = createOutFileService();
-            shared_ptr<BaseLogger> logger = createLogger(outFileService);
-            return make_shared<Context>(outFileService, logger);
-        }
-
-        unique_ptr<Reader> createReader(shared_ptr<Context> ctx) const {
-            string readerType = config["reader"]["type"].as<string>();
-            if (readerType == "csvReader") {
-                string inputCsvFile = config["reader"]["filename"].as<string>();
-                return make_unique<csvReader>(ctx, inputCsvFile);
-            }
-            throw runtime_error("Reader type is not valid");
-        }
-
-        unique_ptr<Writer> createWriter(shared_ptr<Context> ctx) const {
-            string writerType = config["writer"]["type"].as<string>();
-            if (writerType == "csvWriter") {
-                string outputCsvFile = config["writer"]["filename"].as<string>();
-                return make_unique<csvWriter>(ctx, outputCsvFile);
-            }
-            throw runtime_error("Writer type is not valid");
-        }
-
-        unique_ptr<Integrator> createIntegrator() const {
-            string integratorType = config["integrator"]["type"].as<string>();
-            if (integratorType == "CanteraIntegrator") {
-                return make_unique<CanteraIntegrator>();
-            } else if (integratorType == "CanteraIntegratorOMP") {
-                return make_unique<CanteraIntegratorOMP>();
-            } else if (integratorType == "CVodeIntegrator") {
-                return make_unique<CVodeIntegrator>();
-            } else if (integratorType == "CVodeIntegratorOMP") {
-                return make_unique<CVodeIntegratorOMP>();
-            } else if (integratorType == "CVodeIntegratorGPU") {
-                return make_unique<CVodeIntegratorGPU>();
-            }
-            throw runtime_error("Integrator type is not valid");
-        }
-
-
-    private:
-        YAML::Node config;
-
-        shared_ptr<OutFileService> createOutFileService() const {
-            YAML::Node outFolder = config["outFileService"]["outFolder"];
-            if (outFolder.IsNull())
-                return make_shared<OutFileService>();
-            else
-                return make_shared<OutFileService>(outFolder.as<string>());
-        }
-
-        shared_ptr<BaseLogger> createLogger(shared_ptr<OutFileService> outFileService) const {
-            // Unorder map to match string with enum class
-            unordered_map<string, LogLevel> enumMap = {
-                {"DEBUG", LogLevel::DEBUG},
-                {"INFO", LogLevel::INFO}
-            };
-            // Set logLevel based on the config info
-            LogLevel logLevel = enumMap[config["logger"]["logLevel"].as<string>()];
-
-            string loggerType = config["logger"]["type"].as<string>();
-            if (loggerType == "FileLogger")
-                return make_shared<FileLogger>(logLevel, outFileService);
-            else if (loggerType == "ConsoleLogger")
-                return make_shared<ConsoleLogger>(logLevel);
-            
-            throw runtime_error("Logger type is not valid");
-        }
-};
 
 void runODEApplication(string configFileName) {
     YAML::Node config = YAML::LoadFile(configFileName);
     
     // Timers
-    Timer readTimer, writeTimer, integrateTimer, totalTimer;
-
-    // Start total timer
-    totalTimer.tic();
+    Timer readTimer, writeTimer, integrateTimer;
 
     ODEIntegratorFactory factory(config);
 
@@ -107,7 +32,7 @@ void runODEApplication(string configFileName) {
     filesystem::path fromFile(configFileName);
     filesystem::path toFile(outPath);
     toFile /= "config.yaml";
-    logger->info("Copying config.yaml to evidences");
+    logger->info("Copying config.yaml to results directory");
     filesystem::copy_file(fromFile, toFile);
 
     // Read data
@@ -129,6 +54,7 @@ void runODEApplication(string configFileName) {
 
     integrator->init(ctx, integratorConfig);
     integrator->integrate(0.0, dt);
+    integrator->clean();
     integrateTimer.toc();
 
     // Writer
@@ -137,12 +63,27 @@ void runODEApplication(string configFileName) {
     writer->write();
     writeTimer.toc();
 
-    integrator->clean();
+    // Log and Write performance results
+    stringstream ss;
+    ss << "{ readTime: " << readTimer.getTime() << ", "
+       << "integrationTime: " << integrateTimer.getTime() << ", "
+       << "writeTime: " << writeTimer.getTime() << ", "
+       << "totalTime: " 
+       << readTimer.getTime() + integrateTimer.getTime() + writeTimer.getTime()
+       << " }";
+    logger->info(ss.str());
+    logger->info("Writing performance.yaml to results directory");
+    YAML::Node performanceYaml;
+    performanceYaml["readTime"] = readTimer.getTime();
+    performanceYaml["integrationTime"] = integrateTimer.getTime();
+    performanceYaml["writeTime"] = writeTimer.getTime();
+    performanceYaml["totalTime"] = readTimer.getTime() + integrateTimer.getTime() + writeTimer.getTime();
+    
+    filesystem::path performancePath(outPath);
+    performancePath /= "performance.yaml";
+    ofstream performanceFile(performancePath.string());
+    performanceFile << performanceYaml;
 
-    // End total timer
-    totalTimer.toc();
-
-    // TODO: Write the performance.yaml file with the times
     logger->info("End of ODEApplication execution");
 }
 

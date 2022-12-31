@@ -7,7 +7,7 @@ writer:
     type: csvWriter
     filename: result.csv
 integrator:
-    type: CanteraIntegrator
+    type: CanteraIntegratorOMP
     omp:
         cpus: 10
         schedule:
@@ -19,5 +19,5 @@ integrator:
     pressure: 101325.15
     dt: 1.0e-3
 logger:
-    type: ConsoleLogger
+    type: FileLogger
     logLevel: DEBUG

@@ -28,7 +28,8 @@ void CVodeIntegratorGPU::init(std::shared_ptr<Context> ctx, IntegratorConfig con
 }
 
 void CVodeIntegratorGPU::integrate(double t0, double t) {
-    
+    Integrator::integrate(t0, t);
+
     int processed_systems = 0;
     while (processed_systems < totalSize) {
         int systems_to_process;

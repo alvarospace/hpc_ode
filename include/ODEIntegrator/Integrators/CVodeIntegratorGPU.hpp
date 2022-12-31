@@ -11,7 +11,6 @@ class CVodeIntegratorGPU : public Integrator, public MechanismDriver {
     public:
         void init(std::shared_ptr<Context> ctx, IntegratorConfig config) override;
         void integrate(double t0, double t) override;
-        void clean() override {}
         dydt_driver dydt_func() override;
         jacobian_driver jacobian_func() override;
 

@@ -1,10 +1,12 @@
 # CPU
 add_library(IntegratorsCPU OBJECT 
+    Integrator.cpp
     CanteraIntegrator.cpp
     CanteraIntegratorOMP.cpp
     CVodeIntegrator.cpp
     CVodeIntegratorOMP.cpp
     Drivers/CVodeSerialDriver.cpp
+    OpenMPRuntime.cpp
 )
 
 find_package(Threads REQUIRED)

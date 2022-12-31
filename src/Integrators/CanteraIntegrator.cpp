@@ -32,6 +32,7 @@ void CanteraIntegrator::init(std::shared_ptr<Context> _ctx, IntegratorConfig con
 }
 
 void CanteraIntegrator::integrate(double t0, double t) {
+    Integrator::integrate(t0, t);
     double* temperatures = nullptr;
     double* enthalpies = nullptr;
     double* species = nullptr;

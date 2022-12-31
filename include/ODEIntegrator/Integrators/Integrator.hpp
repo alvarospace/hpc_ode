@@ -21,29 +21,9 @@ struct IntegratorConfig {
 //Abstract class that every integrator should inherit
 class Integrator {
     public:
-        virtual void init(std::shared_ptr<Context> _ctx, IntegratorConfig config) {
-            ctx = _ctx;
-            logger = ctx->getLogger();
-            mesh = ctx->getMesh();
-            totalSize = mesh->totalSize();
-            systemSize = mesh->numSpecies();
-
-            mechanism = config.mechanism;
-            reltol = config.reltol;
-            abstol = config.abstol;
-            pressure = config.pressure;
-            ompConfig = config.ompConfig;
-
-            logger->info("Initializing integrator...");
-            std::stringstream ss;
-            ss << "{ mechanism: " << mechanism << ", "
-               << "reltol: " << reltol << ", "
-               << "abstol: " << abstol << ", "
-               << "pressure: " << pressure << " }";
-            logger->info(ss.str());
-        }
-        virtual void integrate(double t0, double t) = 0;
-        virtual void clean() = 0;
+        virtual void init(std::shared_ptr<Context> _ctx, IntegratorConfig config);
+        virtual void integrate(double t0, double t);
+        virtual void clean();
 
     protected:
         int totalSize;

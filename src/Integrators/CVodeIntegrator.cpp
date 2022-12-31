@@ -50,7 +50,7 @@ void CVodeIntegrator::init(std::shared_ptr<Context> ctx, IntegratorConfig config
 }
 
 void CVodeIntegrator::integrate(double t0, double t) {
-
+    Integrator::integrate(t0, t);
     // Systems allocation
     vector<vector<double>> systemsData = data_transfer_from_mesh();
 
