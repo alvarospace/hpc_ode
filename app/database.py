@@ -1,30 +1,16 @@
 import sqlite3
+import argparse
+from pathlib import Path
 
-INPUT_TABLE = "input"
-EXECUTION_TABLE = "execution"
-OMP_TABLE = "omp"
-INTEGRATOR_CONFIG_TABLE = "integrator_config"
-LOG_FILES_TABLE = "log_files"
+from constants import INPUT_DATA
 
-INPUT_DATA = [
-    {
-        "input_id": "/home/almousa/TFM/hpc_cvode/ref_data/res_gri3.0.csv",
-        "mechanism": "gri30",
-        "nsp": 53,
-        "systems": 55076
-    },
-    {
-        "input_id": "/home/almousa/TFM/hpc_cvode/ref_data/res_gri_32.csv",
-        "mechanism": "gri30",
-        "nsp": 53,
-        "systems": 32
-    },
-]
+DB_RELATIVE_LOCATION = "/app/database.py"
 
 class DataBase:
     def __init__(self, path: str):
         self._path = path
         self._connection = sqlite3.connect(self._path, detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
+        self._connection.execute("PRAGMA foreign_keys = ON;")
         self._cursor = self._connection.cursor()
 
     def query(self, sql: str) -> list:
@@ -52,18 +38,18 @@ class DataBase:
         self.create_log_files_table()
 
     def create_input_table(self) -> None:
-        self._cursor.execute("""CREATE TABLE :input_table (
+        self._cursor.execute("""CREATE TABLE input (
             input_id         TEXT       NOT NULL    PRIMARY KEY, -- path to the file
             mechanism        TEXT       NOT NULL, -- example: gri30 (see resources for more examples)
             nsp              INTEGER    NOT NULL,
-            systems          INTEGER    NOT NULL,
+            systems          INTEGER    NOT NULL
         );
-        """, {"input_table": INPUT_TABLE})
+        """)
 
     def create_execution_table(self) -> None:
-        self._cursor.execute("""CREATE TABLE :execution_table (
+        self._cursor.execute("""CREATE TABLE execution (
             execution_id     INTEGER    NOT NULL    PRIMARY KEY,
-            input_id         TEXT       NOT NULL    REFERENCES :input_table( input_id ),
+            input_id         TEXT       NOT NULL,
             reader           TEXT       NOT NULL,
             writer           TEXT       NOT NULL,
             integrator       TEXT       NOT NULL,
@@ -74,41 +60,83 @@ class DataBase:
             write_time       REAL       NOT NULL,
             total_time       REAL       NOT NULL,
             date             TIMESTAMP  NOT NULL,
+            FOREIGN KEY (input_id) REFERENCES input( input_id )
         );
-        """, {"execution_table": EXECUTION_TABLE, "input_table": INPUT_TABLE})
+        """)
 
     def create_integrator_config_table(self) -> None:
-        self._cursor.execute("""CREATE TABLE :integrator_config_table (
+        self._cursor.execute("""CREATE TABLE integrator_config (
             integrator_config_id  INTEGER    NOT NULL    PRIMARY KEY,
-            execution_id          INTEGER    NOT NULL    REFERENCES :execution_table( execution_id ),
+            execution_id          INTEGER    NOT NULL,
             reltol                REAL       NOT NULL,
             abstol                REAL       NOT NULL,
             pressure              REAL       NOT NULL,
-            dt                    REAL       NOT NULL
+            dt                    REAL       NOT NULL,
+            FOREIGN KEY (execution_id) REFERENCES execution( execution_id )
         );
-        """, {"integrator_config_table": INTEGRATOR_CONFIG_TABLE, "execution_table": EXECUTION_TABLE})
+        """)
 
     def create_omp_table(self) -> None:
-        self._cursor.execute("""CREATE TABLE :omp_table (
+        self._cursor.execute("""CREATE TABLE omp (
             omp_id           INTEGER    NOT NULL    PRIMARY KEY,
-            execution_id     INTEGER    NOT NULL    REFERENCES :execution_table( execution_id ),
+            execution_id     INTEGER    NOT NULL,
             cpus             INTEGER    NOT NULL,
             schedule         TEXT       NOT NULL,
-            chunk            INTEGER    NOT NULL
+            chunk            INTEGER    NOT NULL,
+            FOREIGN KEY (execution_id) REFERENCES execution( execution_id )
         );
-        """, {"omp_table": OMP_TABLE, "execution_table": EXECUTION_TABLE})
+        """)
 
     def create_log_files_table(self) -> None:
-        self._cursor.execute("""CREATE TABLE :log_files_table (
+        self._cursor.execute("""CREATE TABLE log_files (
             integrator_config_id  INTEGER    NOT NULL    PRIMARY KEY,
-            execution_id          INTEGER    NOT NULL    REFERENCES :execution_table( execution_id ),
-            log_file              BLOB       NOT NULL
+            execution_id          INTEGER    NOT NULL,
+            log_file              BLOB       NOT NULL,
+            FOREIGN KEY (execution_id) REFERENCES execution( execution_id )
         );
-        """, {"log_files_table": LOG_FILES_TABLE, "execution_table": EXECUTION_TABLE})
+        """)
+
+    def init_input_table(self) -> None:
+        for entry in INPUT_DATA:
+            self._cursor.execute("""INSERT INTO input (input_id, mechanism, nsp, systems)
+            VALUES (:input_id, :mechanism, :nsp, :systems);
+            """, entry)
+        self._connection.commit()
+
+
+def main(args: argparse.Namespace):
+    # Add the parent directory of the repository to the 
+    # input file of each entry
+    repo_directory = __file__.replace(DB_RELATIVE_LOCATION, "")
+    global INPUT_DATA
+    for entry in INPUT_DATA:
+        entry["input_id"] = repo_directory + entry["input_id"]
+
+    path = Path(args.path)
+    if path.is_dir() is False:
+        path.mkdir(parents=True)
+    path = path.joinpath("ODEIntegratorDB.db")
     
-            
-            
+    if args.create:
+        db = DataBase(str(path))
+        db.create_tables()
+        db.init_input_table()
+        db.close()
+
+    if args.delete:
+        path.unlink()
+
 if __name__ == "__main__":
-    db = DataBase("../results/database.db")
-    db.create_tables()
-    db.close()
+    # Arguments parser
+    parser = argparse.ArgumentParser("Database manager")
+    parser.add_argument("-p", "--path", required=True, type=str,
+                        help="Host path where database is or where it will be created")
+    parser.add_argument("-c", "--create", action="store_true", default=False,
+                        help= "Flag to create new database or create tables in a empty database")
+    parser.add_argument("-d", "--delete", action="store_true", default=False,
+                        help="Flag to delete database")
+
+    args = parser.parse_args()
+    main(args)
+
+    
