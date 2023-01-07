@@ -21,8 +21,8 @@ INPUT_DATA = [
 ]
 
 # Components and configuration
-READERS = ["csvReader"]
-WRITERS = ["csvWriter"]
+READERS = ["csvReader", "testReader"]
+WRITERS = ["csvWriter", "testWriter"]
 LOGGERS = ["ConsoleLogger", "FileLogger"]
 LOGGER_LEVELS = ["DEBUG", "INFO"]
 INTEGRATORS = [
