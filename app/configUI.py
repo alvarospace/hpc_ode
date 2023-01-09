@@ -100,37 +100,21 @@ class ConfigYamlPage:
         self.openmp_cpus = IntVar()
         self.openmp_schedule = StringVar()
         self.openmp_chunk = IntVar()
-
-        self.variables_list = [
-            self.reader_type,
-            self.csvreader_filename,
-            self.writer_type,
-            self.csvwriter_filename,
-            self.logger_type,
-            self.logger_level,
-            self.outfolder,
-            self.integrator_type,
-            self.integrator_mechanism,
-            self.integrator_reltol,
-            self.integrator_abstol,
-            self.integrator_pressure,
-            self.integrator_time,
-            self.openmp_cpus,
-            self.openmp_schedule,
-            self.openmp_chunk
-        ]
         
+        self.message = StringVar()
+
         # Grid structure
         self.main_frame = ttk.Frame(self.root, padding=PADDING, borderwidth=3, relief="raised")
         self.config_frame = ttk.Frame(self.main_frame, borderwidth=2, relief="raised")
-        self.left_column = ttk.Frame(self.config_frame, padding=PADDING)
-        self.right_column = ttk.Frame(self.config_frame, padding=PADDING)
+        self.left_column = ttk.Frame(self.config_frame, padding=f"{PADDING} {PADDING} {PADDING} 0")
+        self.right_column = ttk.Frame(self.config_frame, padding=f"0 {PADDING} {PADDING} {PADDING}")
+        self.yaml_frame = ttk.Frame(self.main_frame, padding=PADDING, borderwidth=2, relief="raised")
         self.bottom = ttk.Frame(self.main_frame, padding=PADDING, borderwidth=2, relief="raised")
         
         self.main_frame.grid(column=0, row=0, sticky=(N, S, E, W))
         self.main_frame.columnconfigure(0, weight=1)
-        # self.main_frame.columnconfigure(1, weight=1)
-        # self.main_frame.rowconfigure(0, weight=1)
+        self.main_frame.columnconfigure(1, weight=1)
+        self.main_frame.rowconfigure(0, weight=1)
 
         # TODO: TEXT widget to the right to show the yaml
         # TODO: Message and button widgets
@@ -146,7 +130,13 @@ class ConfigYamlPage:
         self.right_column.grid(column=1, row=0, sticky=(N, S, E, W))
         self.right_column.columnconfigure(0, weight=1)
 
-        # self.bottom.grid(column=0, columnspan=2, row=1, sticky=(N, S, E, W))
+        self.yaml_frame.grid(column=1, row=0, rowspan=2, sticky=(N, S, E, W))
+        self.yaml_frame.columnconfigure(0, weight=1)
+        self.yaml_frame.rowconfigure(0, weight=1)
+        
+        self.bottom.grid(column=0, row=1, sticky=(N, S, E, W))
+        self.bottom.columnconfigure(0, weight=1)
+        self.bottom.rowconfigure(0, weight=1)
 
         # Create components
         self.init_reader(self.left_column)
@@ -154,6 +144,59 @@ class ConfigYamlPage:
         self.init_logger(self.left_column)
         self.init_outfolder(self.left_column)
         self.init_integrator(self.right_column)
+        self.init_yaml(self.yaml_frame)
+        self.init_bottom(self.bottom)
+
+    ######### YAML LOGIC ########
+    def init_yaml(self, frame: ttk.Frame) -> None:
+        self.yaml_text = Text(frame, wrap="none")
+        self.vert_scroll = ttk.Scrollbar(frame, orient=VERTICAL, command=self.yaml_text.yview)
+        self.horiz_scroll = ttk.Scrollbar(frame, orient=HORIZONTAL, command=self.yaml_text.xview)
+        self.yaml_text.configure(yscrollcommand=self.vert_scroll.set, xscrollcommand=self.horiz_scroll.set)
+
+        self.yaml_text.grid(column=0, row=0, sticky=(N, S, E, W))
+        self.vert_scroll.grid(column=1, row=0, sticky=(N, S))
+        self.horiz_scroll.grid(column=0, row=1, sticky=(W, E))
+
+    def input_validation(self) -> tuple[bool, str]:
+        is_correct = False
+
+        variables_minimum_list = [
+            self.reader_type,
+            self.writer_type,
+            self.logger_type,
+            self.logger_level,
+            self.outfolder,
+            self.integrator_type,
+            self.integrator_mechanism,
+            self.integrator_reltol,
+            self.integrator_abstol,
+            self.integrator_pressure,
+            self.integrator_time,
+        ]
+
+        openmp_list = [
+            self.openmp_cpus,
+            self.openmp_schedule,
+            self.openmp_chunk
+        ]
+
+        return is_correct
+
+    ######## GENERATE LOGIC ########
+    def init_bottom(self, frame: ttk.Frame) -> None:
+        self.message_label = ttk.Label(frame, textvariable=self.message, padding=PADDING, borderwidth=2, relief="raised", anchor=CENTER)
+        self.buttons_frame = ttk.Frame(frame, padding=LABELFRAME_PADDING)
+        self.generate_button = ttk.Button(self.buttons_frame, text="Generate")
+        self.saveas_button = ttk.Button(self.buttons_frame, text="Save as", state="disabled")
+
+        self.message_label.grid(column=0, row=0, sticky=(N, S, E, W))
+        self.buttons_frame.grid(column=0, row=1, sticky=(N, S, E, W))
+        self.buttons_frame.columnconfigure(0, weight=1)
+        self.buttons_frame.columnconfigure(1, weight=1)
+        self.buttons_frame.rowconfigure(0, weight=1)
+        self.generate_button.grid(column=0, row=0, sticky=(N, S, E, W))
+        self.saveas_button.grid(column=1, row=0, sticky=(N, S, E, W))
 
     ######### READER LOGIC ###########
     def init_reader(self, frame: ttk.Frame) -> None:
