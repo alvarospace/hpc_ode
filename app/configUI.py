@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Callable
 
 from tkinter import ttk
@@ -54,12 +55,13 @@ class EntryBox(InputBox):
         self.entry.grid(column=0, row=1, sticky=(W, E))
 
 class BrowseBox(InputBox):
-    def __init__(self, parent: ttk.Frame, label: str, variable: Variable) -> None:
+    def __init__(self, parent: ttk.Frame, label: str, variable: Variable, dir: bool=False) -> None:
         super().__init__(parent, label, variable)
         self.sub_frame = ttk.Frame(self.frame)
         self.entry = ttk.Entry(self.sub_frame, textvariable=self.variable)
         self.button_frame = ttk.Frame(self.sub_frame, padding="5 0 0 0")
-        self.button = ttk.Button(self.button_frame, text="Browse", command=self.browse_file)
+        command: Callable[[], None] = self.browse_dir if dir is True else self.browse_file
+        self.button = ttk.Button(self.button_frame, text="Browse", command=command)
 
     def draw(self, column: int, row: int) -> None:
         super().draw(column, row)
@@ -70,9 +72,13 @@ class BrowseBox(InputBox):
         self.button_frame.grid(column=1, row=0)
         self.button.grid(column=0, row=0)
 
-    def browse_file(self):
+    def browse_file(self) -> None:
         filename = filedialog.askopenfilename()
         self.variable.set(filename)
+
+    def browse_dir(self) -> None:
+        dirname = filedialog.askdirectory()
+        self.variable.set(dirname)
 
 class ConfigYamlPage:
     def __init__(self, root: Tk):
@@ -90,7 +96,7 @@ class ConfigYamlPage:
         self.csvwriter_filename = StringVar(value="result.csv")
         self.logger_type = StringVar()
         self.logger_level = StringVar()
-        self.outfolder = StringVar(value="null")
+        self.outfolder = StringVar(value=None)
         self.integrator_type = StringVar()
         self.integrator_mechanism = StringVar()
         self.integrator_reltol = DoubleVar(value=1.0e-6)
@@ -158,10 +164,9 @@ class ConfigYamlPage:
         self.vert_scroll.grid(column=1, row=0, sticky=(N, S))
         self.horiz_scroll.grid(column=0, row=1, sticky=(W, E))
 
-    def input_validation(self) -> tuple[bool, str]:
-        is_correct = False
-
-        variables_minimum_list = [
+    def is_input_valid(self) -> bool:
+        is_valid = True
+        variables_minimum_list: list[Variable] = [
             self.reader_type,
             self.writer_type,
             self.logger_type,
@@ -174,20 +179,48 @@ class ConfigYamlPage:
             self.integrator_pressure,
             self.integrator_time,
         ]
-
-        openmp_list = [
+        openmp_list: list[Variable] = [
             self.openmp_cpus,
             self.openmp_schedule,
             self.openmp_chunk
         ]
+        for min_var in variables_minimum_list:
+            if not min_var.get():
+                is_valid = False
 
-        return is_correct
+        if not self.is_dir(self.outfolder.get()):
+            is_valid = False
+
+        if self.reader_type.get() == "csvReader":
+            if not self.csvreader_filename.get():
+                is_valid = False
+            else:
+                is_valid = self.is_csv(self.csvreader_filename.get())
+
+        if self.writer_type.get() == "csvWriter":
+            if not self.csvwriter_filename.get():
+                is_valid = False
+            else:
+                is_valid = self.is_csv(self.csvwriter_filename.get())
+        
+        if self.integrator_type.get().endswith("OMP"):
+            for omp_var in openmp_list:
+                if not omp_var.get():
+                    is_valid = False
+
+        return is_valid
+
+    def is_csv(self, filename: str) -> bool:
+        return True if filename.endswith(".csv") else False
+
+    def is_dir(self, dirname: str) -> bool:
+        return Path(dirname).is_dir()
 
     ######## GENERATE LOGIC ########
     def init_bottom(self, frame: ttk.Frame) -> None:
-        self.message_label = ttk.Label(frame, textvariable=self.message, padding=PADDING, borderwidth=2, relief="raised", anchor=CENTER)
+        self.message_label = ttk.Label(frame, textvariable=self.message, padding=PADDING, anchor=CENTER)
         self.buttons_frame = ttk.Frame(frame, padding=LABELFRAME_PADDING)
-        self.generate_button = ttk.Button(self.buttons_frame, text="Generate")
+        self.generate_button = ttk.Button(self.buttons_frame, text="Generate", command=self.generate_yaml)
         self.saveas_button = ttk.Button(self.buttons_frame, text="Save as", state="disabled")
 
         self.message_label.grid(column=0, row=0, sticky=(N, S, E, W))
@@ -197,6 +230,50 @@ class ConfigYamlPage:
         self.buttons_frame.rowconfigure(0, weight=1)
         self.generate_button.grid(column=0, row=0, sticky=(N, S, E, W))
         self.saveas_button.grid(column=1, row=0, sticky=(N, S, E, W))
+
+    def generate_yaml(self):
+        self.message.set("")
+        if self.is_input_valid():
+            # Init yaml dict fields
+            for field in ["outFileService", "reader", "writer", "integrator", "logger"]:
+                self.yaml_dict[field] = {}
+
+            # Out file service
+            self.yaml_dict["outFileService"]["outFolder"] = self.outfolder.get()
+
+            # Reader
+            self.yaml_dict["reader"]["type"] = self.reader_type.get()
+            if self.reader_type.get() == "csvReader":
+                self.yaml_dict["reader"]["filename"] = self.csvreader_filename.get()
+            
+            # Writer
+            self.yaml_dict["writer"]["type"] = self.writer_type.get()
+            if self.writer_type.get() == "csvWriter":
+                self.yaml_dict["writer"]["filename"] = self.csvwriter_filename.get()
+
+            # Logger
+            self.yaml_dict["logger"]["type"] = self.logger_type.get()
+            self.yaml_dict["logger"]["logLevel"] = self.logger_level.get()
+
+            # Integrator
+            self.yaml_dict["integrator"]["type"] = self.integrator_type.get()
+            self.yaml_dict["integrator"]["mechanism"] = self.integrator_mechanism.get()
+            self.yaml_dict["integrator"]["reltol"] = self.integrator_reltol.get()
+            self.yaml_dict["integrator"]["abstol"] = self.integrator_abstol.get()
+            self.yaml_dict["integrator"]["pressure"] = self.integrator_pressure.get()
+            self.yaml_dict["integrator"]["dt"] = self.integrator_time.get()
+            if self.integrator_type.get().endswith("OMP"):
+                self.yaml_dict["integrator"]["omp"] = {}
+                self.yaml_dict["integrator"]["omp"]["schedule"] = {}
+                self.yaml_dict["integrator"]["omp"]["cpus"] = self.openmp_cpus.get()
+                self.yaml_dict["integrator"]["omp"]["schedule"]["type"] = self.openmp_schedule.get()
+                self.yaml_dict["integrator"]["omp"]["schedule"]["chunk"] = self.openmp_chunk.get()
+
+            self.yaml_text.delete("1.0", "end")
+            self.yaml_text.insert("1.0", yaml.dump(self.yaml_dict))
+        else:
+            self.message.set("Some missing values, please fill in all the fields")
+        
 
     ######### READER LOGIC ###########
     def init_reader(self, frame: ttk.Frame) -> None:
@@ -270,7 +347,7 @@ class ConfigYamlPage:
     ######### OUTFOLDER LOGIC ###########
     def init_outfolder(self, frame: ttk.Frame) -> None:
         self.outfolder_frame = ttk.Labelframe(frame, padding=LABELFRAME_PADDING, text="Evidences directory")
-        self.outfolder_browsebox = BrowseBox(self.outfolder_frame, "Folder:", self.outfolder)
+        self.outfolder_browsebox = BrowseBox(self.outfolder_frame, "Folder:", self.outfolder, True)
         self.outfolder_browsebox.draw(0, 0)
         # info_message = "Default value \"null\" save the execution results in the \"./out\" directory (relative to the compiled binary)"
         # self.outfolder_info_label = ttk.Label(self.outfolder_frame, text=info_message, wraplength="10cm")
