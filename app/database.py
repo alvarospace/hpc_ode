@@ -2,9 +2,8 @@ import sqlite3
 import argparse
 from pathlib import Path
 
+from common import get_absolute_path_input_data
 from constants import INPUT_DATA
-
-DB_RELATIVE_LOCATION = "/app/database.py"
 
 class DataBase:
     def __init__(self, path: str):
@@ -96,8 +95,8 @@ class DataBase:
         );
         """)
 
-    def init_input_table(self) -> None:
-        for entry in INPUT_DATA:
+    def init_input_table(self, input_data) -> None:
+        for entry in input_data:
             self._cursor.execute("""INSERT INTO input (input_id, mechanism, nsp, systems)
             VALUES (:input_id, :mechanism, :nsp, :systems);
             """, entry)
@@ -107,10 +106,7 @@ class DataBase:
 def main(args: argparse.Namespace):
     # Add the parent directory of the repository to the 
     # input file of each entry
-    repo_directory = __file__.replace(DB_RELATIVE_LOCATION, "")
-    global INPUT_DATA
-    for entry in INPUT_DATA:
-        entry["input_id"] = repo_directory + entry["input_id"]
+    input_data = get_absolute_path_input_data()
 
     path = Path(args.path)
     if path.is_dir() is False:
@@ -120,7 +116,7 @@ def main(args: argparse.Namespace):
     if args.create:
         db = DataBase(str(path))
         db.create_tables()
-        db.init_input_table()
+        db.init_input_table(input_data)
         db.close()
 
     if args.delete:

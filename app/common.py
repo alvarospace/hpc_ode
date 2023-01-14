@@ -7,7 +7,7 @@ COMMON_RELATIVE_LOCATION = "/app/common.py"
 def get_repo_directory() -> str:
     return __file__.replace(COMMON_RELATIVE_LOCATION, "")
 
-def get_absolute_path_input_data() -> list:
+def get_absolute_path_input_data() -> list[dict]:
     input = INPUT_DATA
     repo_directory = __file__.replace(COMMON_RELATIVE_LOCATION, "")
     for entry in input:
