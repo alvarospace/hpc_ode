@@ -108,6 +108,7 @@ class ConfigYamlPage:
         self.openmp_chunk = IntVar()
         
         self.message = StringVar()
+        self.generated_flag = False
 
         # Grid structure
         self.main_frame = ttk.Frame(self.root, padding=PADDING, borderwidth=3, relief="raised")
@@ -123,7 +124,6 @@ class ConfigYamlPage:
         self.main_frame.rowconfigure(0, weight=1)
 
         # TODO: TEXT widget to the right to show the yaml
-        # TODO: Message and button widgets
 
         self.config_frame.grid(column=0, row=0, sticky=(N, S, E, W))
         self.config_frame.columnconfigure(0, weight=1)
@@ -188,7 +188,7 @@ class ConfigYamlPage:
             if not min_var.get():
                 is_valid = False
 
-        if not self.is_dir(self.outfolder.get()):
+        if not self.is_dir(self.outfolder.get()) and self.outfolder.get() != "null":
             is_valid = False
 
         if self.reader_type.get() == "csvReader":
@@ -205,7 +205,7 @@ class ConfigYamlPage:
         
         if self.integrator_type.get().endswith("OMP"):
             for omp_var in openmp_list:
-                if not omp_var.get():
+                if not omp_var.get() and omp_var.get() != 0:
                     is_valid = False
 
         return is_valid
@@ -221,7 +221,7 @@ class ConfigYamlPage:
         self.message_label = ttk.Label(frame, textvariable=self.message, padding=PADDING, anchor=CENTER)
         self.buttons_frame = ttk.Frame(frame, padding=LABELFRAME_PADDING)
         self.generate_button = ttk.Button(self.buttons_frame, text="Generate", command=self.generate_yaml)
-        self.saveas_button = ttk.Button(self.buttons_frame, text="Save as", state="disabled")
+        self.saveas_button = ttk.Button(self.buttons_frame, text="Save as", state="disabled", command=self.save_yaml)
 
         self.message_label.grid(column=0, row=0, sticky=(N, S, E, W))
         self.buttons_frame.grid(column=0, row=1, sticky=(N, S, E, W))
@@ -271,10 +271,21 @@ class ConfigYamlPage:
 
             self.yaml_text.delete("1.0", "end")
             self.yaml_text.insert("1.0", yaml.dump(self.yaml_dict))
+
+            # Save as button active
+            self.saveas_button.state(["!disabled"])
         else:
             self.message.set("Some missing values, please fill in all the fields")
+            # Save as button disabled again
+            self.saveas_button.state(["disabled"])
         
-
+    def save_yaml(self):
+        filename = filedialog.asksaveasfilename()
+        text = self.yaml_text.get("1.0", "end")
+        print(text)
+        with open(filename, "w", encoding="UTF-8") as f:
+            f.write(text)
+        
     ######### READER LOGIC ###########
     def init_reader(self, frame: ttk.Frame) -> None:
         self.reader_frame = ttk.Labelframe(frame, padding=LABELFRAME_PADDING, text="Reader")
@@ -349,11 +360,17 @@ class ConfigYamlPage:
         self.outfolder_frame = ttk.Labelframe(frame, padding=LABELFRAME_PADDING, text="Evidences directory")
         self.outfolder_browsebox = BrowseBox(self.outfolder_frame, "Folder:", self.outfolder, True)
         self.outfolder_browsebox.draw(0, 0)
-        # info_message = "Default value \"null\" save the execution results in the \"./out\" directory (relative to the compiled binary)"
-        # self.outfolder_info_label = ttk.Label(self.outfolder_frame, text=info_message, wraplength="10cm")
+        self.outfolder_browsebox.entry.bind("<FocusIn>", self.outfolder_focus_in)
+        self.outfolder_browsebox.entry.bind("<FocusOut>", self.outfolder_focus_out)
 
         self.outfolder_frame.grid(column=0, row=3, sticky=(N, S, E, W))
         self.outfolder_frame.columnconfigure(0, weight=1)
+
+    def outfolder_focus_in(self, event: Event):
+        self.message.set("\"null\" save the execution results in the \"./out\" directory")
+    
+    def outfolder_focus_out(self, event: Event):
+        self.message.set("")
 
     ######### INTEGRATOR LOGIC ###########
     def init_integrator(self, frame: ttk.Frame) -> None:
