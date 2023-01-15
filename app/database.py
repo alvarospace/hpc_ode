@@ -2,11 +2,18 @@ import sqlite3
 import argparse
 from pathlib import Path
 
-from common import get_absolute_path_input_data
+from common import get_repo_directory
 from constants import INPUT_DATA
 
 class DataBase:
+    """Class to connect to the SQLite3 database
+    """
     def __init__(self, path: str):
+        """Constructor
+
+        Args:
+            path (str): absolute or relative path to the sqlite3 database
+        """
         self._path = path
         self._connection = sqlite3.connect(self._path, detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
         self._connection.execute("PRAGMA foreign_keys = ON;")
@@ -37,7 +44,7 @@ class DataBase:
         self.create_log_files_table()
 
     def create_input_table(self) -> None:
-        self._cursor.execute("""CREATE TABLE input (
+        self._cursor.execute("""CREATE TABLE Input (
             input_id         TEXT       NOT NULL    PRIMARY KEY, -- path to the file
             mechanism        TEXT       NOT NULL, -- example: gri30 (see resources for more examples)
             nsp              INTEGER    NOT NULL,
@@ -46,7 +53,7 @@ class DataBase:
         """)
 
     def create_execution_table(self) -> None:
-        self._cursor.execute("""CREATE TABLE execution (
+        self._cursor.execute("""CREATE TABLE Execution (
             execution_id     INTEGER    NOT NULL    PRIMARY KEY,
             input_id         TEXT       NOT NULL,
             reader           TEXT       NOT NULL,
@@ -59,45 +66,45 @@ class DataBase:
             write_time       REAL       NOT NULL,
             total_time       REAL       NOT NULL,
             date             TIMESTAMP  NOT NULL,
-            FOREIGN KEY (input_id) REFERENCES input( input_id )
+            FOREIGN KEY (input_id) REFERENCES Input( input_id )
         );
         """)
 
     def create_integrator_config_table(self) -> None:
-        self._cursor.execute("""CREATE TABLE integrator_config (
+        self._cursor.execute("""CREATE TABLE Integrator_Config (
             integrator_config_id  INTEGER    NOT NULL    PRIMARY KEY,
             execution_id          INTEGER    NOT NULL,
             reltol                REAL       NOT NULL,
             abstol                REAL       NOT NULL,
             pressure              REAL       NOT NULL,
             dt                    REAL       NOT NULL,
-            FOREIGN KEY (execution_id) REFERENCES execution( execution_id )
+            FOREIGN KEY (execution_id) REFERENCES Execution( execution_id )
         );
         """)
 
     def create_omp_table(self) -> None:
-        self._cursor.execute("""CREATE TABLE omp (
+        self._cursor.execute("""CREATE TABLE Omp (
             omp_id           INTEGER    NOT NULL    PRIMARY KEY,
             execution_id     INTEGER    NOT NULL,
             cpus             INTEGER    NOT NULL,
             schedule         TEXT       NOT NULL,
             chunk            INTEGER    NOT NULL,
-            FOREIGN KEY (execution_id) REFERENCES execution( execution_id )
+            FOREIGN KEY (execution_id) REFERENCES Execution( execution_id )
         );
         """)
 
     def create_log_files_table(self) -> None:
-        self._cursor.execute("""CREATE TABLE log_files (
+        self._cursor.execute("""CREATE TABLE Log_Files (
             integrator_config_id  INTEGER    NOT NULL    PRIMARY KEY,
             execution_id          INTEGER    NOT NULL,
             log_file              BLOB       NOT NULL,
-            FOREIGN KEY (execution_id) REFERENCES execution( execution_id )
+            FOREIGN KEY (execution_id) REFERENCES Execution( execution_id )
         );
         """)
 
     def init_input_table(self, input_data) -> None:
         for entry in input_data:
-            self._cursor.execute("""INSERT INTO input (input_id, mechanism, nsp, systems)
+            self._cursor.execute("""INSERT INTO Input (input_id, mechanism, nsp, systems)
             VALUES (:input_id, :mechanism, :nsp, :systems);
             """, entry)
         self._connection.commit()
@@ -106,7 +113,10 @@ class DataBase:
 def main(args: argparse.Namespace):
     # Add the parent directory of the repository to the 
     # input file of each entry
-    input_data = get_absolute_path_input_data()
+    input_data = INPUT_DATA
+    repo_directory = get_repo_directory()
+    for entry in input_data:
+        entry["input_id"] = repo_directory + entry["input_id"]
 
     path = Path(args.path)
     if path.is_dir() is False:
