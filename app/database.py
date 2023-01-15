@@ -27,6 +27,27 @@ class DataBase:
     def insert(self):
         pass
 
+    def add_item_into_input(self, id, mechanism, nsp, systems) -> None:
+        row_dict = {
+            "input_id": id,
+            "mechanism": mechanism,
+            "nsp": nsp,
+            "systems": systems
+        }
+
+        # Check that the id does not already exists
+        existing_items = self.query("SELECT * FROM Input")
+        for item in existing_items:
+            current_id: str = item[0]
+            if current_id == id:
+                raise Exception("Trying to add into input a item with a input_id that already exists")
+
+        self._cursor.execute("""INSERT INTO Input (input_id, mechanism, nsp, systems)
+        VALUES (:input_id, :mechanism, :nsp, :systems)
+        """, row_dict)
+        self._connection.commit()
+
+
     def get_all_from_table(self, table: str) -> list | None:
         self._cursor.execute("SELECT * FROM :table", {"table": table})
         return self._cursor.fetchall()
