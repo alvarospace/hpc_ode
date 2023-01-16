@@ -40,7 +40,7 @@ class DataBase:
         for item in existing_items:
             current_id: str = item[0]
             if current_id == id:
-                raise Exception("Trying to add into input a item with a input_id that already exists")
+                raise Exception("Trying to add into input a item with an input_id that already exists")
 
         self._cursor.execute("""INSERT INTO Input (input_id, mechanism, nsp, systems)
         VALUES (:input_id, :mechanism, :nsp, :systems)
