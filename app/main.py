@@ -12,16 +12,20 @@ from constants import INPUT_TABLE
 from runtime_variables import (
     EXECUTION_WORKSPACE,
     CONFIG_YAML,
-    ODE_APPLICATION_BINARY
+    ODE_APPLICATION_BINARY,
+    DATABASE
 )
 
-def prepare_execution_folder(directory: str) -> None:
+def prepare_execution_dir(directory: str) -> str:
     """Remove from filesystem what is in "directory" and prepare
     the directory for the execution
 
     Args:
         directory (str): path to the directory where the program will use for
         the temporary and result files in the execution
+
+    Returns:
+        str: the absolute path to execution dir
     """
     print("Preparing execution folder...")
     dir_path = Path(directory)
@@ -31,6 +35,7 @@ def prepare_execution_folder(directory: str) -> None:
     out_path = dir_path.joinpath("out")
     out_path.mkdir()
     print(f"Execution folder prepared: \"{directory}\"")
+    return str(out_path)
 
 def prepare_config_file(config_filename: str, destination_path: str) -> str:
     """Read the config.yaml for the execution and modify the "outFolder" field
@@ -88,8 +93,22 @@ def register_input_if_needed(config_filename: str, db_connection: DataBase) -> s
     finally:
         return id
 
+def take_results_files(execution_dir: str) -> list[str]:
+    """Returns a list with the paths of the results files
 
+    Args:
+        results_dir (str): path of the directory where ODEApplication has used as output
+        in the configuration yaml file
 
+    Returns:
+        list[str]: list with the paths of the results files
+    """
+    results = []
+    for file in Path(execution_dir).iterdir():
+        if file.is_dir():
+            for result in file.iterdir():
+                results.append(str(result))
+            return results
 
 
 if __name__ == "__main__":
@@ -99,30 +118,20 @@ if __name__ == "__main__":
     config_file: str = os.environ.get(CONFIG_YAML)
     workspace_dir: str = os.environ.get(EXECUTION_WORKSPACE)
     binary_app: str = os.environ.get(ODE_APPLICATION_BINARY)
+    database_path: str = os.environ.get(DATABASE)
 
     # Database connection
-    db = DataBase("./ODEIntegratorDB.db")
+    db = DataBase(database_path)
 
-    prepare_execution_folder(workspace_dir)
+    execution_dir = prepare_execution_dir(workspace_dir)
     config_file_prepared = prepare_config_file(config_file, workspace_dir)
-    register_input_if_needed(config_file_prepared, db)
+    input_id = register_input_if_needed(config_file_prepared, db)
 
-    data = db.query(f"SELECT * FROM {INPUT_TABLE}")
-    print(data)
-    db.close()
     # Run integrator
-    # result = subprocess.run([binary_app, config_file_prepared], capture_output=True, text=True, check=True)
-    # print(result.stdout.strip("\n"))
+    result = subprocess.run([binary_app, config_file_prepared], capture_output=True, text=True, check=True)
+    print("ODEApplication output: " + result.stdout.strip("\n"))
+    result_files = take_results_files(execution_dir)
 
+    # TODO: Process files and save them into database
 
-    # input_path = Path(get_repo_directory()).joinpath(DATA)
-    # nsp, systems = inspect_csv(str(input_path))
-    # print(nsp, systems)
-    # db = DataBase("./ODEIntegratorDB.db")
-    # data = db.query(f"SELECT * FROM {INPUT_TABLE}")
-    # print(data)
-    # db.close()
-
-    # result = subprocess.run(["echo", "Hola desde python"], capture_output=True, text=True, check=True)
-    # print(result.stdout.strip("\n"))
-
+    db.close()

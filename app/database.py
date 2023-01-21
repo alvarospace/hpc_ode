@@ -81,7 +81,7 @@ class DataBase:
             writer           TEXT       NOT NULL,
             integrator       TEXT       NOT NULL,
             logger           TEXT       NOT NULL,
-            output           TEXT       NOT NULL, -- path to the output file
+            output           BLOB       NOT NULL,
             read_time        REAL       NOT NULL,
             integration_time REAL       NOT NULL,
             write_time       REAL       NOT NULL,

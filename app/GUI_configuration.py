@@ -123,8 +123,6 @@ class ConfigYamlPage:
         self.main_frame.columnconfigure(1, weight=1)
         self.main_frame.rowconfigure(0, weight=1)
 
-        # TODO: TEXT widget to the right to show the yaml
-
         self.config_frame.grid(column=0, row=0, sticky=(N, S, E, W))
         self.config_frame.columnconfigure(0, weight=1)
         self.config_frame.columnconfigure(1, weight=1)
