@@ -1,5 +1,6 @@
 import sqlite3
 import argparse
+import datetime
 from pathlib import Path
 
 from common import get_repo_directory
@@ -23,9 +24,36 @@ class DataBase:
         self._cursor.execute(sql)
         return self._cursor.fetchall()
 
-    # TODO: insert to database
-    def insert(self):
-        pass
+    def insert(self, execution: dict, integrator: dict, log: dict, omp: dict | None) -> None:
+        # Insert Execution Table
+        execution["date"] = datetime.datetime.now()
+        self._cursor.execute("""INSERT INTO Execution
+        (input_id, reader, writer, integrator, logger, output, read_time, integration_time, write_time, total_time, date)
+        VALUES
+        (:input_id, :reader, :writer, :integrator, :logger, :output, :read_time, :integration_time, :write_time, :total_time, :date)
+        """, execution)
+        execution_id = self._cursor.lastrowid
+        integrator["execution_id"] = execution_id
+        log["execution_id"] = execution_id
+
+        # Insert Integrator Table
+        self._cursor.execute("""INSERT INTO Integrator_Config
+        (execution_id, reltol, abstol, pressure, dt) VALUES (:execution_id, :reltol, :abstol, :pressure, :dt)
+        """, integrator)
+
+        # Insert Log Table
+        self._cursor.execute("""INSERT INTO Log_Files
+        (execution_id, log_level, log_file) VALUES (:execution_id, :log_level, :log_file)
+        """, log)
+
+        # Insert OMP Table if not None
+        if omp is not None:
+            omp["execution_id"] = execution_id
+            self._cursor.execute("""INSERT INTO Omp
+            (execution_id, cpus, schedule, chunk) VALUES (:execution_id, :cpus, :schedule, :chunk)
+            """, omp)
+        
+        self._connection.commit()
 
     def add_item_into_input(self, id, mechanism, nsp, systems) -> None:
         row_dict = {
@@ -116,9 +144,10 @@ class DataBase:
 
     def create_log_files_table(self) -> None:
         self._cursor.execute("""CREATE TABLE Log_Files (
-            integrator_config_id  INTEGER    NOT NULL    PRIMARY KEY,
+            logger_id  INTEGER    NOT NULL    PRIMARY KEY,
             execution_id          INTEGER    NOT NULL,
-            log_file              BLOB       NOT NULL,
+            log_level             TEXT       NOT NULL,
+            log_file              BLOB,
             FOREIGN KEY (execution_id) REFERENCES Execution( execution_id )
         );
         """)

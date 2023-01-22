@@ -1,20 +1,35 @@
 import os
 import subprocess
 import shutil
+import datetime
 from pathlib import Path
 
 import yaml
 from dotenv import load_dotenv
 
-from common import get_repo_directory, inspect_csv
+from common import inspect_csv
 from database import DataBase
-from constants import INPUT_TABLE
 from runtime_variables import (
     EXECUTION_WORKSPACE,
     CONFIG_YAML,
     ODE_APPLICATION_BINARY,
     DATABASE
 )
+
+PERFORMANCE_FILE = "performance.yaml"
+CONFIG_FILE = "config.yaml"
+LOG_FILE = "out.log"
+RESULT_FILE = ".csv"
+
+def read_yaml(filename: str) -> dict:
+    with open(filename, "r") as f:
+        yaml_dict: dict = yaml.safe_load(f)
+    return yaml_dict
+
+def to_binary(filename: str) -> bytes:
+    with open(filename, "rb") as f:
+        bin_file = f.read()
+    return bin_file
 
 def prepare_execution_dir(directory: str) -> str:
     """Remove from filesystem what is in "directory" and prepare
@@ -50,17 +65,14 @@ def prepare_config_file(config_filename: str, destination_path: str) -> str:
         str: the absolute path to the new "config.yaml" file
     """
     
-    CONFIG_FILE_MODIFIED = "config.yaml"
-
     print("Preparing configuration file...")
     # Change outFolder name of the config_file
-    with open(config_filename, "r") as f:
-        yaml_dict: dict = yaml.safe_load(f)
+    yaml_dict = read_yaml(config_filename)
     out_destination_path = Path(destination_path).joinpath("out")
     yaml_dict["outFileService"]["outFolder"] = str(out_destination_path)
 
     # Write changes to the destination path
-    config_tmp_path = Path(destination_path).joinpath(CONFIG_FILE_MODIFIED)
+    config_tmp_path = Path(destination_path).joinpath(CONFIG_FILE)
     with open(config_tmp_path, "w") as f:
         yaml.dump(yaml_dict, f)
 
@@ -78,8 +90,7 @@ def register_input_if_needed(config_filename: str, db_connection: DataBase) -> s
         str: input_id (path where the input csv file is located)
     """
     print("Registering new input in the database...")
-    with open(config_filename, "r") as f:
-        config_yaml: dict = yaml.safe_load(f)
+    config_yaml = read_yaml(config_filename)
     id: str = config_yaml["reader"]["filename"]
     mechanism: str = config_yaml["integrator"]["mechanism"]
     mechanism = mechanism.replace(".yaml","")
@@ -93,7 +104,7 @@ def register_input_if_needed(config_filename: str, db_connection: DataBase) -> s
     finally:
         return id
 
-def take_results_files(execution_dir: str) -> list[str]:
+def take_result_files(execution_dir: str) -> dict[str, str]:
     """Returns a list with the paths of the results files
 
     Args:
@@ -101,17 +112,26 @@ def take_results_files(execution_dir: str) -> list[str]:
         in the configuration yaml file
 
     Returns:
-        list[str]: list with the paths of the results files
+        dict[str, str]: dict with the paths of the results files
     """
-    results = []
+    results = {}
     for file in Path(execution_dir).iterdir():
         if file.is_dir():
             for result in file.iterdir():
-                results.append(str(result))
+                name = result.name
+                if name == CONFIG_FILE:
+                    results[CONFIG_FILE] = result
+                elif name == PERFORMANCE_FILE:
+                    results[PERFORMANCE_FILE] = result
+                elif name == LOG_FILE:
+                    results[LOG_FILE] = result
+                elif name.endswith(RESULT_FILE):
+                    results[RESULT_FILE] = result
+                else:
+                    print("No match taking the result files")
             return results
 
-
-if __name__ == "__main__":
+def main():
     load_dotenv()
 
     # Runtime variables
@@ -130,8 +150,50 @@ if __name__ == "__main__":
     # Run integrator
     result = subprocess.run([binary_app, config_file_prepared], capture_output=True, text=True, check=True)
     print("ODEApplication output: " + result.stdout.strip("\n"))
-    result_files = take_results_files(execution_dir)
+    result_files = take_result_files(execution_dir)
 
-    # TODO: Process files and save them into database
+    # Dictionaries to insert into database
+    config_yaml = read_yaml(result_files[CONFIG_FILE])
+    performance_yaml = read_yaml(result_files[PERFORMANCE_FILE])
+    
+    execution_dict = {
+        "input_id": input_id,
+        "reader": config_yaml["reader"]["type"],
+        "writer": config_yaml["writer"]["type"],
+        "integrator": config_yaml["integrator"]["type"],
+        "logger": config_yaml["logger"]["type"],
+        "output": to_binary(result_files[RESULT_FILE]),
+        "read_time": performance_yaml["readTime"],
+        "integration_time": performance_yaml["integrationTime"],
+        "write_time": performance_yaml["writeTime"],
+        "total_time": performance_yaml["totalTime"],
+    }
 
+    integrator_dict = {
+        "reltol": config_yaml["integrator"]["reltol"],
+        "abstol": config_yaml["integrator"]["abstol"],
+        "pressure": config_yaml["integrator"]["pressure"],
+        "dt": config_yaml["integrator"]["dt"]
+    }
+
+    log_binary = result_files.get(LOG_FILE)
+    if log_binary is not None:
+        log_binary = to_binary(log_binary)
+    log_dict = {
+        "log_level": config_yaml["logger"]["logLevel"],
+        "log_file": log_binary
+    }
+
+    omp_dict: dict | None = None
+    if str(config_yaml["integrator"]["type"]).endswith("OMP"):
+        omp_dict = {
+            "cpus": config_yaml["integrator"]["omp"]["cpus"],
+            "schedule": config_yaml["integrator"]["omp"]["schedule"]["type"],
+            "chunk": config_yaml["integrator"]["omp"]["schedule"]["chunk"]
+        }
+    
+    db.insert(execution_dict, integrator_dict, log_dict, omp_dict)
     db.close()
+
+if __name__ == "__main__":
+    main()
