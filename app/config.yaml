@@ -1,0 +1,23 @@
+outFileService:
+    outFolder: null # if null, default is ./out
+reader:
+    type: csvReader
+    filename: /home/almousa/TFM/hpc_cvode/ref_data/res_gri_32.csv # Only for file readers
+writer:
+    type: csvWriter
+    filename: result.csv
+integrator:
+    type: CanteraIntegratorOMP
+    omp:
+        cpus: 10
+        schedule:
+            type: static
+            chunk: 1
+    mechanism: gri30.yaml
+    reltol: 1.0e-6
+    abstol: 1.0e-10
+    pressure: 101325.15
+    dt: 1.0e-3
+logger:
+    type: FileLogger
+    logLevel: DEBUG
